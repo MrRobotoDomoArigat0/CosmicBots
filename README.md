@@ -111,7 +111,7 @@ CosmicBots.exe, or deletes it:
   (Harmony) to change the game in memory - the same technique game trainers
   use - so some security tools are suspicious of it. That is the only reason.
   You can check the file is the one published here: its SHA256 is
-      f7cbcbccfa20d29712ac978e614d979f33d481db6b4391fd937b0485de6ade18
+      b7f6f4e698601ba4415acff1a648055392e13c0429252fb99b8cb70fe7e22a99
   (PowerShell:  Get-FileHash CosmicBots.exe -Algorithm SHA256 )
   To allow it:
     - SmartScreen: click "More info" and then "Run anyway".
