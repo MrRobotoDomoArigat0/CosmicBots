@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net47</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AssemblyName>CosmicBots</AssemblyName>
+    <RootNamespace>CosmicBots</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>false</GenerateBindingRedirectsOutputType>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- assembly metadata -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Product>CosmicBots</Product>
+    <AssemblyTitle>CosmicBots (Public Test 1)</AssemblyTitle>
+    <Company>MrRobotoDomoArigato</Company>
+    <Authors>MrRobotoDomoArigato</Authors>
+    <Copyright>© 2026 MrRobotoDomoArigato</Copyright>
+    <Description>CosmicBots 0.4.0 Public Test 1 - an unofficial fan mod that adds AI teammates for players 2-4 in offline local play. Not affiliated with or endorsed by Marvel, Tribute Games, Dotemu or Valve.</Description>
+    <Version>0.4.0</Version>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
+    <FileVersion>0.4.0.0</FileVersion>
+    <InformationalVersion>0.4.0-test1</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+    <!-- reproducible build, no personal paths in the binary, no pdb -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <PathMap>$(MSBuildProjectDirectory)=/src</PathMap>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <!-- Folder with your own copy of the game (the folder that contains Game.exe). Its assemblies are used for
+         compiling only (Private=false: nothing from the game is copied to the output). Override with:
+         dotnet build -c Release -p:GameDir="D:\Games\MARVEL Cosmic Invasion" -->
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\MARVEL Cosmic Invasion</GameDir>
+    <GameDirSlash>$([MSBuild]::EnsureTrailingSlash('$(GameDir)'))</GameDirSlash>
+  </PropertyGroup>
+  <Target Name="CheckGameDir" BeforeTargets="ResolveAssemblyReferences" Condition="!Exists('$(GameDirSlash)Game.exe')">
+    <Error Text="Game.exe was not found in GameDir='$(GameDir)'. Point GameDir at your MARVEL Cosmic Invasion folder, e.g. dotnet build -c Release -p:GameDir=&quot;D:\Games\MARVEL Cosmic Invasion&quot;" />
+  </Target>
+  <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Game"><HintPath>$(GameDirSlash)Game.exe</HintPath><Private>false</Private></Reference>
+    <Reference Include="ParisEngine"><HintPath>$(GameDirSlash)ParisEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="FNA"><HintPath>$(GameDirSlash)FNA.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="NLog"><HintPath>$(GameDirSlash)NLog.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(GameDirSlash)Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>
