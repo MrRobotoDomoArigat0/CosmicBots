@@ -1,9 +1,13 @@
 # CosmicBots
 COSMICBOTS 0.4.0 - PUBLIC STEAM TEST
+
 AI teammates for MARVEL Cosmic Invasion STEAM (offline local play)
+
 CosmicBots v0.4.1 Xbox Public Test (Xbox app / PC Game Pass, experimental)
+
 AI bot teammates (P2–P4) for MARVEL Cosmic Invasion, now for the Xbox app / PC Game Pass version. Offline local play only. Experimental: tested on game build 1.0.0.13466 (Xbox package 26.6.8.0).
-Steam players: use the regular 0.4.0 release instead.
+
+
 
 Copyright (c) 2026 MrRobotoDomoArigato
 https://www.youtube.com/@MrRobotoDomoArigato
