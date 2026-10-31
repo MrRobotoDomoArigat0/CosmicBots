@@ -1,10 +1,13 @@
 # CosmicBots
 COSMICBOTS 0.4.0 - PUBLIC TEST
-AI teammates for MARVEL Cosmic Invasion (offline local play)
+AI teammates for MARVEL Cosmic Invasion STEAM ONLY(offline local play)
 Copyright (c) 2026 MrRobotoDomoArigato
 https://www.youtube.com/@MrRobotoDomoArigato
 Feel free to reach out to me to report any issues or features with the bot you would like to see.
 ==================================================================
+***Steam only (for now):** CosmicBots currently works only with the Steam version of MARVEL Cosmic Invasion. 
+The Xbox app / PC Game Pass version is not supported, because its protected game files can't be loaded by the mod.*
+
 
 IMPORTANT - PLEASE READ
 -----------------------
@@ -111,7 +114,7 @@ CosmicBots.exe, or deletes it:
   (Harmony) to change the game in memory - the same technique game trainers
   use - so some security tools are suspicious of it. That is the only reason.
   You can check the file is the one published here: its SHA256 is
-      b7f6f4e698601ba4415acff1a648055392e13c0429252fb99b8cb70fe7e22a99
+      b18b68e1c6509f893f0e8947f690a1e727d37008df9feed12ef11d78bc36fcdc
   (PowerShell:  Get-FileHash CosmicBots.exe -Algorithm SHA256 )
   To allow it:
     - SmartScreen: click "More info" and then "Run anyway".
