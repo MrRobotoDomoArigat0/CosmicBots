@@ -19,8 +19,8 @@ The Xbox app / PC Game Pass version is now supported and separated by a 2nd rele
 IMPORTANT - PLEASE READ
 -----------------------
 CosmicBots is an UNOFFICIAL FAN MOD. It is not affiliated with, endorsed by,
-or supported by Marvel, Tribute Games, Dotemu or Valve. You need your own
-legitimate copy of MARVEL Cosmic Invasion on Steam. This download contains
+or supported by Marvel, Tribute Games, Dotemu, Microsoft, or Valve. You need your own
+legitimate copy of MARVEL Cosmic Invasion on Steam or the Xbox App on PC. This download contains
 no game code and no game assets - only the mod itself.
 
 This is a first public test. Expect rough edges, and please report what you
