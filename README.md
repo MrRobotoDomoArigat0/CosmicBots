@@ -1,12 +1,15 @@
 # CosmicBots
-COSMICBOTS 0.4.0 - PUBLIC TEST
-AI teammates for MARVEL Cosmic Invasion STEAM ONLY(offline local play)
+COSMICBOTS 0.4.0 - PUBLIC STEAM TEST
+AI teammates for MARVEL Cosmic Invasion STEAM (offline local play)
+CosmicBots v0.4.1 Xbox Public Test (Xbox app / PC Game Pass, experimental)
+AI bot teammates (P2–P4) for MARVEL Cosmic Invasion, now for the Xbox app / PC Game Pass version. Offline local play only. Experimental: tested on game build 1.0.0.13466 (Xbox package 26.6.8.0).
+Steam players: use the regular 0.4.0 release instead.
+
 Copyright (c) 2026 MrRobotoDomoArigato
 https://www.youtube.com/@MrRobotoDomoArigato
 Feel free to reach out to me to report any issues or features with the bot you would like to see.
 ==================================================================
-***Steam only (for now):** CosmicBots currently works only with the Steam version of MARVEL Cosmic Invasion. 
-The Xbox app / PC Game Pass version is not supported, because its protected game files can't be loaded by the mod.*
+The Xbox app / PC Game Pass version is now supported and separated by a separate release.
 
 
 IMPORTANT - PLEASE READ
@@ -29,7 +32,7 @@ enemy rushes, follow your lead on the path-select screen, and stay with you
 through the level.
 
 
-INSTALL
+STEAM INSTALL
 -------
 1. Close the game.
 2. In Steam, right-click MARVEL Cosmic Invasion > Manage > Browse local files.
@@ -51,6 +54,27 @@ as usual always gives you the unmodded game.
 Tip: right-click CosmicBots.exe > Send to > Desktop (create shortcut) for an
 easy launcher.
 
+XBOX APP / PC GAME PASS VERSION Install
+------
+Extract the zip somewhere (like your Desktop).
+
+1. Go to your game folder, usually: C:\XboxGames\MARVEL Cosmic Invasion\Content ( Tip: Turn on *View > File name extensions* in File Explorer so you don't end up with Game.exe.exe ), Another way to reach the game folder (Xbox app: click the 3 dots (...) next to the game, then Manage, then Files, then Browse, then in explorer click into MARVEL Cosmic Invasion\Content)
+
+2. Rename the game's **Game.exe** to exactly **Game-original.exe**
+
+3. Unzip the mod if you haven't done so already, copy CosmicBots.exe into the folder and rename it to Game.exe, then copy 0Harmony.dll in too
+
+4. Launch the game normally from the Xbox app (Play Button)
+
+Press F7 in-game, use arrow keys to turn bots on or off
+
+- Game updates replace Game.exe, so redo steps 2 and 3 after each update
+
+- To uninstall, delete the mod's Game.exe and rename Game-original.exe back to Game.exe, or use the 3 dots (...) > Manage > Files > Verify and repair
+
+- It works offline only, and blocks online multiplayer, crossplay, invites, Epic Online Services, telemetry and crash reporting while it runs. Xbox sign-in, achievements and cloud saves are left alone
+
+- Tested on game build 1.0.0.13466.
 
 USING THE BOTS - THE F7 MENU
 ----------------------------
