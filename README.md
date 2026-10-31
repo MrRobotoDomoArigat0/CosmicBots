@@ -1,5 +1,5 @@
 # CosmicBots
-COSMICBOTS 0.4.0 - PUBLIC STEAM TEST
+COSMICBOTS v0.4.0 - PUBLIC STEAM TEST
 
 AI teammates for MARVEL Cosmic Invasion STEAM (offline local play)
 
@@ -13,7 +13,7 @@ Copyright (c) 2026 MrRobotoDomoArigato
 https://www.youtube.com/@MrRobotoDomoArigato
 Feel free to reach out to me to report any issues or features with the bot you would like to see.
 ==================================================================
-The Xbox app / PC Game Pass version is now supported and separated by a separate release.
+The Xbox app / PC Game Pass version is now supported and separated by a 2nd release.
 
 
 IMPORTANT - PLEASE READ
@@ -41,7 +41,7 @@ STEAM INSTALL
 1. Close the game.
 2. In Steam, right-click MARVEL Cosmic Invasion > Manage > Browse local files.
    An Explorer window opens on the game folder (the one that contains Game.exe).
-3. Unzip the contents of this zip into THAT folder, so these files sit
+3. Unzip the contents of the 0.4.0 zip into THAT folder, so these files sit
    right next to Game.exe:
        CosmicBots.exe
        CosmicBots.exe.config
@@ -60,7 +60,7 @@ easy launcher.
 
 XBOX APP / PC GAME PASS VERSION Install
 ------
-Extract the zip somewhere (like your Desktop).
+Extract the 0.4.1 zip somewhere (like your Desktop).
 
 1. Go to your game folder, usually: C:\XboxGames\MARVEL Cosmic Invasion\Content ( Tip: Turn on *View > File name extensions* in File Explorer so you don't end up with Game.exe.exe ), Another way to reach the game folder (Xbox app: click the 3 dots (...) next to the game, then Manage, then Files, then Browse, then in explorer click into MARVEL Cosmic Invasion\Content)
 
