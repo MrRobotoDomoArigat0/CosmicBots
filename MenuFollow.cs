@@ -11,8 +11,7 @@ namespace CosmicBots
     /// <summary>
     /// Makes bots take part in screens where every player must vote/confirm, by feeding them menu input
     /// through BotController (so the game's own vote logic, sounds and network messages run unchanged).
-    ///
-    /// Audit of Game.exe (v0.1.1): the only screen that waits on input from EVERY player is the arcade
+    /// Audit of Game.exe: the only screen that waits on input from EVERY player is the arcade
     /// PATH SELECT vote (MissionSelect.UpdateArcadeModeSelection). Character select is handled by the
     /// select hook; the arcade continue prompt auto-accepts Debug-type controllers in vanilla code;
     /// pause, results, Cosmic Vault, credits, Corps Files and story mission select read only the host's controller.

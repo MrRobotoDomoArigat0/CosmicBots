@@ -164,7 +164,7 @@ namespace CosmicBots
         {
             if (inputId == null) return Vector2.Zero;
             if (inputId.ID == "MenuMove") return MenuDir;
-            if (inputId.ID == "PlayerMoveDigital") return SprintDigital(justPressed);   // v0.2.5: deliberate double-tap sprint only
+            if (inputId.ID == "PlayerMoveDigital") return SprintDigital(justPressed);   // deliberate double-tap sprint only
             return Vector2.Zero;
         }
 

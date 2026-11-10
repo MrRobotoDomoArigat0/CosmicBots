@@ -80,6 +80,9 @@ namespace CosmicBots
 
         public static PlayerInfo GetPlayer(int slot) => PlayerManager.Singleton?.GetPlayerByID(slot);
 
+        public static bool CastleDoomMode => CastleDoom.Active;
+        private static bool _loggedRunLocked;
+
         public static SlotState GetState(int slot)
         {
             PlayerInfo pi = GetPlayer(slot);
@@ -102,6 +105,11 @@ namespace CosmicBots
             PlayerManager pm = PlayerManager.Singleton;
             if (pm == null) return;
             bool online = Online;
+            // Castle Doom: once the run is locked the game removes anyone who joins mid-run, so bots only join before that
+            // (character select, or a level before the lock). Bots already in the run stay.
+            bool noJoin = InLevel && CastleDoom.RunLocked;
+            if (noJoin && !_loggedRunLocked) { _loggedRunLocked = true; Log.Info("Castle Doom: the run is locked, so new bots can't join until the next run (bots already in the run stay)."); }
+            if (!noJoin) _loggedRunLocked = false;
             for (int slot = 1; slot <= 3; slot++)
             {
                 PlayerInfo pi = pm.GetPlayerByID(slot);
@@ -111,7 +119,7 @@ namespace CosmicBots
                 {
                     if (ContextReady || online) Remove(slot, online ? "online session detected" : !want ? "disabled" : "re-picking hero");
                 }
-                else if (pi == null && want && ContextReady && CanAddMore())
+                else if (pi == null && want && !noJoin && ContextReady && CanAddMore())
                 {
                     Add(slot);
                 }

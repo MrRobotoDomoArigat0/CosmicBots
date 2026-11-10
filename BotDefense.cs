@@ -13,7 +13,7 @@ using Paris.Game.Data;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.5 threat-driven defense. Every frame the bot looks for incoming hits using the enemy's real attack state
+    /// threat-driven defense. Every frame the bot looks for incoming hits using the enemy's real attack state
     /// (current attack, attack phase, and the frames of its attack animation: time until the first frame that carries
     /// an attack/grab box) and hostile projectiles (velocity -> ETA). One response is chosen per threat:
     ///   parry  - press block so the hit lands inside the game's parry window (BlockParryWindowDuration, 0.4 s after the
@@ -24,7 +24,7 @@ namespace CosmicBots
     ///   assist - the partner hero's "Cosmic Assist" defense (TeamSwap + Dodge/Block/Parry, TeamHelp.Defense).
     ///   jump   - hop over low projectiles / grabs.
     /// Outcomes are counted from Harmony postfixes on Character.Block/Parry/DodgeIncomingAttack and InternalHurt.
-    /// v0.2.9 parry timing: the game parries when the hit lands on the block's ShieldBox while Player._blockStartTimer <=
+    /// parry timing: the game parries when the hit lands on the block's ShieldBox while Player._blockStartTimer <=
     /// BlockParryWindowDuration (0.4 s) and attacker / defender face each other. The bot now (a) aims the press so the block
     /// is ~0.15-0.25 s old at impact, never less than the time the shield box needs to appear (BlockStartAnim frames + input
     /// latency), (b) re-reads the attacker's animation every frame and re-times the press (and the hold) when the swing clip
@@ -40,9 +40,9 @@ namespace CosmicBots
             public Enemy From;               // attacker (null for projectiles)
             public float X, H;               // attacker / projectile X and height
             public float HitAt;              // predicted time of impact (BotManager.Time)
-            public bool CanBlock = true, CanParry = true, Breaker, Grab, Proj, Multi, Boss, Low, Skin;   // v0.2.12: Skin = standing inside a skin enemy's reach
-            public bool Guess;               // v0.2.9: timing guessed (wind-up clip without hit boxes), not read from frames
-            public MeleeAttackStats Atk;     // v0.2.9: the attack this threat was read from (re-timing / attack-over check)
+            public bool CanBlock = true, CanParry = true, Breaker, Grab, Proj, Multi, Boss, Low, Skin;   // Skin = standing inside a skin enemy's reach
+            public bool Guess;               // timing guessed (wind-up clip without hit boxes), not read from frames
+            public MeleeAttackStats Atk;     // the attack this threat was read from (re-timing / attack-over check)
             public int Hits = 1; public float HitGap;
             public string Kind => Grab ? "grab" : Proj ? "projectile" : Boss ? "boss" : "melee";
         }
@@ -54,7 +54,7 @@ namespace CosmicBots
             public float PressAt, ReleaseAt, ResolveAt;
             public bool Pressed, NeedFace, Hurt, Parried, Blocked, Dodged;
             public float Dir;                // dodge / jump / retreat X direction
-            // v0.2.9 parry bookkeeping
+            // parry bookkeeping
             public float Lead;               // wanted press-to-impact time
             public float PressedAt = -10f, DecidedAt, ShieldUp, BlockTimerAtHit = -1f, HurtAt = -1f;
             public int Retimed, Rearms;
@@ -67,7 +67,7 @@ namespace CosmicBots
         private readonly Dictionary<Enemy, MeleeAttackStats> _threatAttack = new Dictionary<Enemy, MeleeAttackStats>();
         private float _lastHurtAt = -10f, _parriedAt = -10f;
 
-        // v0.2.9: parry lead = time from pressing block to the hit landing. Centre / spread per skill (Easy / Normal / Hard);
+        // parry lead = time from pressing block to the hit landing. Centre / spread per skill (Easy / Normal / Hard);
         // Normal and Hard are clamped into [shield-up + 30 ms, window - 60 ms]; Easy may still miss either way.
         private float ParryLeadCentre => new[] { 0.24f, 0.20f, 0.18f }[Skill];
         private float ParryLeadSpread => new[] { 0.17f, 0.06f, 0.03f }[Skill];
@@ -119,7 +119,7 @@ namespace CosmicBots
         }
 
         /// <summary>
-        /// v0.2.9: time from pressing block until the block's ShieldBox (the parry/guard hurtbox) exists: the first frame of
+        /// time from pressing block until the block's ShieldBox (the parry/guard hurtbox) exists: the first frame of
         /// CharacterInfo.BlockStartAnim with a Shield vulnerability box, plus two frames (the press is read on the next game
         /// tick, then StateBlock starts). Cached per hero.
         /// </summary>
@@ -172,10 +172,10 @@ namespace CosmicBots
                 Enemy e = f.E;
                 MeleeAttackStats atk = null; AttackPhase ph = AttackPhase.None;
                 try { atk = e.CurrentAttack; ph = e.CurrentAttackPhase; } catch { }
-                if (f.Rush && _rushHandled) continue;   // v0.2.15: the lane escape (BotRush.cs) owns Annihilus' Negative Rush
+                if (f.Rush && _rushHandled) continue;   // the lane escape (BotRush.cs) owns Annihilus' Negative Rush
                 if (f.Skin && !f.Boss)
                 {
-                    // v0.2.12: damaging skin: contact range, any facing, no wind-up to wait for. Inside its reach = hit now.
+                    // damaging skin: contact range, any facing, no wind-up to wait for. Inside its reach = hit now.
                     try
                     {
                         float sdx = pos.X - f.BodyP.X, sdy = Math.Abs(pos.Y - f.BodyP.Y);
@@ -190,21 +190,21 @@ namespace CosmicBots
                     continue;
                 }
                 if (atk == null || (ph != AttackPhase.Antic && ph != AttackPhase.Delivery)) continue;
-                Vector2 fp = f.BodyP;                                                     // v0.2.10: the attacker's own position, not a boss part we aim at
+                Vector2 fp = f.BodyP;                                                     // the attacker's own position, not a boss part we aim at
                 float dx = pos.X - fp.X, dy = Math.Abs(pos.Y - fp.Y);
                 if ((dx > 0f) != f.FacingRight && Math.Abs(dx) > 10f) continue;           // not facing us
                 bool timed = AttackTiming(e, atk, out float eta, out float boxReach, out bool grabBox, out int hits, out float gap, out float boxNear, out float boxFar);
                 if (!timed) eta = ph == AttackPhase.Delivery ? 0.03f : -1f;
                 if (eta < 0f || eta > THREAT_HORIZON) continue;
                 bool guess = !timed || boxReach < 0f;
-                if (guess && _guessCd.TryGetValue(e, out float gcd) && now < gcd) continue;  // v0.2.10: a guessed guard just whiffed vs this enemy
+                if (guess && _guessCd.TryGetValue(e, out float gcd) && now < gcd) continue;  // a guessed guard just whiffed vs this enemy
                 float depth = 22f; try { depth = Math.Max(16f, Math.Min(48f, atk.Depth.Max)) + 8f; } catch { }
                 if (dy > depth) continue;
                 Player aimed = null; try { aimed = e.Target; } catch { }
                 bool atMe = ReferenceEquals(aimed, me);
                 if (!guess && boxFar > boxNear)
                 {
-                    // v0.2.9: will the swing's hit boxes (first hit window, enemy's facing) cover our body at impact?
+                    // will the swing's hit boxes (first hit window, enemy's facing) cover our body at impact?
                     float sign = f.FacingRight ? 1f : -1f, fwd = (pos.X - fp.X) * sign;
                     float adv = 0f; try { adv = MathHelper.Clamp(e.BodyComponent.Displacement.Speed.X * sign * eta, -40f, 90f); } catch { }
                     float hw = HalfWidth(me), slack = atMe ? 14f : 6f;
@@ -260,8 +260,8 @@ namespace CosmicBots
         private static bool AttackTiming(Enemy e, MeleeAttackStats atk, out float eta, out float reach, out bool grab, out int hits, out float gap)
             => AttackTiming(e, atk, out eta, out reach, out grab, out hits, out gap, out _, out _);
 
-        /// <param name="near">v0.2.9: closest forward edge (px, in the attacker's facing direction) of the first hit window's boxes</param>
-        /// <param name="far">v0.2.9: farthest forward edge of the first hit window's boxes</param>
+        /// <param name="near">closest forward edge (px, in the attacker's facing direction) of the first hit window's boxes</param>
+        /// <param name="far">farthest forward edge of the first hit window's boxes</param>
         private static bool AttackTiming(Enemy e, MeleeAttackStats atk, out float eta, out float reach, out bool grab, out int hits, out float gap, out float near, out float far)
         {
             eta = -1f; reach = 0f; grab = false; hits = 0; gap = 0f; near = float.MaxValue; far = float.MinValue;
@@ -324,7 +324,7 @@ namespace CosmicBots
             if (_threatSeen.Count > 96) { _threatSeen.Clear(); _threatAttack.Clear(); }
             Stat("threats");
             float eta = t.HitAt - now;
-            float react = t.Skin ? 0f : Jit(ReactionTime, 0.3f);        // v0.2.12: skin contact: no reaction delay
+            float react = t.Skin ? 0f : Jit(ReactionTime, 0.3f);        // skin contact: no reaction delay
             float p = DefendChance * (eta < react ? 0.5f : 1f) + (t.Boss ? 0.08f : 0f);
             if (!t.Skin && !Chance(Math.Min(0.97f, p))) { return; }                                      // didn't notice it (human-like)
             if (!onGround || me.IsFlying || me.IsInSpecialAttack || _specialHolding) { return; }
@@ -347,7 +347,7 @@ namespace CosmicBots
             {
                 bool wantParry = t.CanParry && !t.Multi && !(Skill == 0 && Chance(0.35f));
                 d.ShieldUp = ShieldUpDelay(me, ci);
-                // v0.2.9: the shield has to be up before impact; a press that cannot make it is not a parry attempt
+                // the shield has to be up before impact; a press that cannot make it is not a parry attempt
                 if (wantParry && Skill > 0 && t.HitAt - earliest < d.ShieldUp + 0.01f)
                 {
                     if (t.HitAt - earliest < d.ShieldUp - 0.02f) { Stat("def-too-late"); return; }
@@ -383,7 +383,7 @@ namespace CosmicBots
             if (t.Skin) Stat("skin-threat-" + d.How);
         }
 
-        /// <summary>v0.2.9: how long to keep guarding after the predicted impact (longer when the timing was guessed).</summary>
+        /// <summary>how long to keep guarding after the predicted impact (longer when the timing was guessed).</summary>
         private static float HoldAfter(Threat t)
         {
             float multi = t.Multi ? Math.Min(1.2f, (t.Hits - 1) * Math.Max(0.08f, t.HitGap) + 0.1f) : 0f;
@@ -391,7 +391,7 @@ namespace CosmicBots
         }
 
         /// <summary>
-        /// v0.2.9: re-read the attacker's animation and move the predicted impact (and the planned press / release) when the
+        /// re-read the attacker's animation and move the predicted impact (and the planned press / release) when the
         /// real swing clip has started or the timing drifted. Flags AttackOver when the attack ended without hitting us.
         /// </summary>
         private void Retime(DefenseAction d, float now)
@@ -411,7 +411,7 @@ namespace CosmicBots
             if (eta <= 0f && now >= d.T.HitAt - 0.03f) return;     // box live now: the hit is due, keep the plan
             float hit = now + eta;
             if (Math.Abs(hit - d.T.HitAt) < 0.02f && guess == d.T.Guess) return;
-            // v0.2.10: a wind-up that keeps getting longer (bosses chaining clips) must not keep the bot guarding forever
+            // a wind-up that keeps getting longer (bosses chaining clips) must not keep the bot guarding forever
             if (hit > d.DecidedAt + DEF_MAX_WAIT) { if (!d.Pressed) { d.AttackOver = true; d.GaveUp = true; } return; }
             d.T.HitAt = hit; d.T.Guess = guess; d.Retimed++;
             if (!d.Pressed && d.How == "parry") d.PressAt = Math.Max(now, hit - d.Lead);
@@ -421,7 +421,7 @@ namespace CosmicBots
             CapHold(d);
         }
 
-        // v0.2.10: hard limits on how long one planned guard can keep the bot from attacking
+        // hard limits on how long one planned guard can keep the bot from attacking
         private const float DEF_MAX_WAIT = 1.4f, DEF_MAX_TOTAL = 1.6f, DEF_MAX_HOLD = 0.9f;
         private readonly Dictionary<object, float> _guessCd = new Dictionary<object, float>();
         private static float MultiExtra(Threat t) => t.Multi ? Math.Min(0.8f, (t.Hits - 1) * Math.Max(0.08f, t.HitGap) + 0.1f) : 0f;
@@ -432,7 +432,7 @@ namespace CosmicBots
             d.ResolveAt = Math.Min(d.ResolveAt, d.DecidedAt + DEF_MAX_TOTAL + extra);
         }
 
-        /// <summary>v0.2.9: log why a parry attempt did not become a parry (rate-limited) and count it by reason.</summary>
+        /// <summary>log why a parry attempt did not become a parry (rate-limited) and count it by reason.</summary>
         private void ParryOutcome(DefenseAction d, float now)
         {
             if (d.How != "parry" || d.Parried) return;
@@ -502,7 +502,7 @@ namespace CosmicBots
                 if (d.Pressed && !d.Hurt && (d.How == "dodge" || d.How == "jump" || d.How == "retreat")) Stat("dodge-ok");
                 if (d.Pressed && !d.Hurt && (d.Blocked || d.Dodged || d.How == "dodge")) _comboCd = 0f;   // punish the whiff / blocked swing
                 if (d.How == "block" || d.How == "parry") Release(A_DODGE);
-                // v0.2.10: don't re-detect the same swing right away; a guessed guard that caught nothing cools down per enemy
+                // don't re-detect the same swing right away; a guessed guard that caught nothing cools down per enemy
                 _threatSeen[d.T.Src] = Math.Max(_threatSeen.TryGetValue(d.T.Src, out float su) ? su : 0f, now + 0.35f);
                 bool noHit = !d.Hurt && !d.Parried && !d.Blocked && !d.Dodged;
                 if (d.T.Guess && noHit && d.T.From != null && (d.How == "parry" || d.How == "block")) { _guessCd[d.T.From] = now + 1.2f; if (_guessCd.Count > 64) _guessCd.Clear(); }
@@ -523,9 +523,9 @@ namespace CosmicBots
                 }
                 if (now < d.PressAt)
                 {
-                    // ready stance: stop walking into the swing. v0.2.9: for a guard, also stop queueing attacks while our
+                    // ready stance: stop walking into the swing. for a guard, also stop queueing attacks while our
                     // own swing plays out (it used to keep the combo going, so the block press got buffered behind it and came late)
-                    // v0.2.10: only in the last 0.3 s before the press (it used to cover the whole wait, so a boss that keeps
+                    // only in the last 0.3 s before the press (it used to cover the whole wait, so a boss that keeps
                     // winding up froze the bots); earlier than that keep fighting
                     if ((d.How == "parry" || d.How == "block") && d.PressAt - now < 0.3f) { AbortPlan(); Intent = "read " + d.T.Kind; _defWhy = "parry-wait"; return true; }
                     if (d.PressAt - now < 0.25f) { if (!ownAttack) AbortPlan(); Intent = "read " + d.T.Kind; _defWhy = "evade-wait"; return !ownAttack; }
@@ -569,7 +569,7 @@ namespace CosmicBots
                         Intent = "back off from " + kind;
                         break;
                 }
-                if (d.T.Boss && Math.Abs(d.T.X - pos.X) < 90f) _bossBackoffT = Jit(0.6f);   // v0.2.10: only near the body that swings
+                if (d.T.Boss && Math.Abs(d.T.X - pos.X) < 90f) _bossBackoffT = Jit(0.6f);   // only near the body that swings
                 _defWhy = d.How == "parry" || d.How == "block" ? "guarding" : "evading";
                 return true;
             }
@@ -577,9 +577,9 @@ namespace CosmicBots
             if (d.How == "block" || d.How == "parry")
             {
                 if (d.Parried || d.Hurt) { Release(A_DODGE); _def.ResolveAt = Math.Min(_def.ResolveAt, now + 0.05f); _defWhy = "guarding"; return d.Parried; }
-                // v0.2.9: re-timed later than planned: keep holding through the impact
+                // re-timed later than planned: keep holding through the impact
                 if (IsHolding(A_DODGE) && d.ReleaseAt - now > 0.02f) Hold(A_DODGE, d.ReleaseAt - now);
-                // v0.2.9: the block would be too old at impact for a parry: let go and press again once (if there is time)
+                // the block would be too old at impact for a parry: let go and press again once (if there is time)
                 if (d.How == "parry" && !d.Blocked && d.Rearms < 1)
                 {
                     float age = now - d.PressedAt, remaining = d.T.HitAt - now;

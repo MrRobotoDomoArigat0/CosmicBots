@@ -8,7 +8,7 @@ using Paris.Game.Actor;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.4: pit awareness. Holes in levels are collision tiles with mask PlayfieldFlag.PIT; Playfield.GenerateHeightMap
+    /// pit awareness. Holes in levels are collision tiles with mask PlayfieldFlag.PIT; Playfield.GenerateHeightMap
     /// turns them into heightmap cells with Flag = PIT and Height = HeightmapInfo.PIT_BOTTOM_HEIGHT (-768). RigidBody marks a
     /// body IsInsidePit when its centre tile is PIT and it sinks below PitDetectionHeight; the game only stops this for
     /// ground attacks / dodges / air attacks (Player.PreventPitFalloff), NOT for walking, sprinting or jumping.
@@ -23,7 +23,7 @@ namespace CosmicBots
         /// <summary>Pit avoidance is permanently off (bots ignore holes; a fall respawns them next to the human).</summary>
         internal static bool PitsOn => false;
         internal static bool LevelHasPits => PitsOn;
-        /// <summary>v0.2.9: the level really has holes (regardless of Avoid holes on/off).</summary>
+        /// <summary>the level really has holes (regardless of Avoid holes on/off).</summary>
         internal static bool LevelHasHoles => _levelHasPits;
 
         /// <summary>Once per playfield: find out whether this level has pit cells and log it.</summary>
@@ -121,7 +121,7 @@ namespace CosmicBots
         {
             Player me = ActivePlayer;
             if (!PitsOn || me == null || _move == Vector2.Zero) { _pitPrevX = _pitPrevY = false; return; }
-            if (_pitGuardOff) { _pitPrevX = _pitPrevY = false; return; }   // v0.2.7: this bot is gap-jumping / walking into the hole on purpose
+            if (_pitGuardOff) { _pitPrevX = _pitPrevY = false; return; }   // this bot is gap-jumping / walking into the hole on purpose
             try
             {
                 if (me.IsFlying || _flightEntering || me.IsKO) { _pitPrevX = _pitPrevY = false; return; }
@@ -131,7 +131,7 @@ namespace CosmicBots
                 Vector2 pos = me.Position2D;
                 if (_inSprint && _sprintOwned && !air)
                 {
-                    // v0.2.5: sprint covers ~2x walk speed and the game has no pit fall-off guard in StateSprint,
+                    // sprint covers ~2x walk speed and the game has no pit fall-off guard in StateSprint,
                     // so look a whole stop distance ahead and leave the sprint (depth-only input -> walk) before the rim.
                     float rs = RunSpeed(me);
                     float sl = MathHelper.Clamp(rs * 0.45f, 40f, 110f);

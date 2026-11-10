@@ -11,7 +11,7 @@ using Paris.Game.Data;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.15: get out of Annihilus' Negative Rush lane.
+    /// get out of Annihilus' Negative Rush lane.
     ///   Observed game behavior:  Annihilus.StateNegativeRush (attack "AnnihilusNegativeRush"): Antic (wind-up anim) -> Delivery. In Delivery he
     ///               picks a random point on the far edge of the arena (the edge on the side he faces, i.e. toward the arena centre),
     ///               waits NegativeRushChangeDirectionDelay (0.1 s), then dashes along that unit direction (private

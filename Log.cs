@@ -8,7 +8,7 @@ using System.Threading;
 namespace CosmicBots
 {
     /// <summary>
-    /// CosmicBots.log writer (v0.2.2: non-blocking).
+    /// CosmicBots.log writer (non-blocking).
     /// Callers only format a line and enqueue it (ConcurrentQueue, lock-free). A single background thread writes batches
     /// through one long-lived FileStream (64 KB buffer) and flushes every ~1 s, so the game thread never touches the disk
     /// (the game folder can be on a slow USB HDD). Before the async writer starts (loader, before the game loop) and

@@ -25,13 +25,13 @@ namespace CosmicBots
         public float Reach;
         public string State;
         public string Label;
-        // v0.2.10: boss parts. P/H/Air/Invuln describe the part we aim at; BodyP/BodyH the enemy's own position (threat reading)
+        // boss parts. P/H/Air/Invuln describe the part we aim at; BodyP/BodyH the enemy's own position (threat reading)
         public Vector2 BodyP; public float BodyH;
         public BossPart Part;
         public float ExtraReach, LaneTol;
-        public bool Skin, Counter;          // v0.2.12: damaging skin up right now / rusher that counters light hits
+        public bool Skin, Counter;          // damaging skin up right now / rusher that counters light hits
         public float SkinReach, SkinDepth;
-        public bool Rush, RushKnown; public Vector2 RushDir; public float RushSpeed, RushDepth;   // v0.2.15: Annihilus Negative Rush (BotRush.cs)
+        public bool Rush, RushKnown; public Vector2 RushDir; public float RushSpeed, RushDepth;   // Annihilus Negative Rush (BotRush.cs)
         public void Reset() { Rush = RushKnown = false; RushDir = default(Vector2); RushSpeed = RushDepth = 0f; E = null; P = BodyP = default(Vector2); H = BodyH = Reach = ExtraReach = LaneTol = 0f; Part = null; Skin = Counter = false; SkinReach = SkinDepth = 0f; Air = Flyer = Boss = Blocking = Invuln = Antic = Delivery = Armored = FacingRight = false; State = Label = null; }
     }
 
@@ -49,14 +49,14 @@ namespace CosmicBots
         private readonly Random _rng = new Random(Environment.TickCount ^ 0x5bd1e995);
         private float _decideCd, _comboCd, _powerCd, _specialCd, _swapCd, _teamCd, _airCd, _flightCd, _defendCd, _idleCd = 6f, _idleT,
             _stuckTimer, _energyFullT, _noAirFoesT, _flightEnterT, _specialHoldT, _bossBackoffT, _lastSwapTime = -100f, _forcedMoveT, _bossBackoffCdUntil;
-        private bool _engagePart; private string _defWhy; private Vector2 _engageAnchor;   // v0.2.10
+        private bool _engagePart; private string _defWhy; private Vector2 _engageAnchor;
         private bool _flightEntering, _specialHolding, _specialJoin, _wasHurt;
-        // v0.2.6: follow-jump gating + jump reason tagging + the human's ground position
+        // follow-jump gating + jump reason tagging + the human's ground position
         private float _followJumpCd, _leaderHighT, _jumpWhyT = -100f, _leaderAirT; private string _jumpWhy;
         private Player _leaderRef; private Vector2 _leaderGround; private int _stuckJumps; private Vector2 _stuckJumpPos;
         private void JumpWhy(string r) { _jumpWhy = r; _jumpWhyT = BotManager.Time; }
         private Vector2 _lastPos, _forcedMove;
-        // v0.2.2: per-frame buffers reused instead of allocated every frame
+        // per-frame buffers reused instead of allocated every frame
         private readonly List<Player> _humansBuf = new List<Player>(4);
         private readonly List<Foe> _foesBuf = new List<Foe>(16), _foePool = new List<Foe>(16);
         private int _foePoolUsed;
@@ -67,7 +67,7 @@ namespace CosmicBots
             f.Reset(); f.E = e; f.P = e.Position2D;
             return f;
         }
-        // v0.2.1 steering state (anti-twitch): arrival hysteresis, smoothed goal/separation, slot side, facing hold
+        // steering state (anti-twitch): arrival hysteresis, smoothed goal/separation, slot side, facing hold
         private bool _arrX = true, _arrY = true, _goalInit, _lastFacingLeft;
         private Vector2 _goalSmooth, _sepSmooth;
         private int _slotSide;                 // -1 = left of the human, +1 = right; 0 = not chosen yet
@@ -79,6 +79,7 @@ namespace CosmicBots
         private Player _lastMe;
         private string _lastState = "";
         private bool _lastFlying;
+        private bool _cdStarted;
 
 
         // ---------------------------------------------------------------- plans (timed input sequences: combos, air attacks, ...)
@@ -139,6 +140,7 @@ namespace CosmicBots
             ActivePlayer = me ?? any;
             if (me == null) { Status = any != null && any.IsKO ? "KO" : "not spawned"; Intent = ""; Unregister(); return; }
             Owner = me;
+            if (BotManager.CastleDoomMode && !_cdStarted) { _cdStarted = true; try { Start(); } catch { } } // spent the one-shot menu confirm so it can't pick a perk by accident
             if (me.IsKO) { Status = "KO"; Intent = ""; AbortPlan(); _holds.Clear(); Unregister(); return; }
 
             float now = BotManager.Time;
@@ -177,10 +179,10 @@ namespace CosmicBots
                 }
             }
 
-            // v0.2.6: formation / follow distance use the human's ground position (last grounded spot while they jump)
+            // formation / follow distance use the human's ground position (last grounded spot while they jump)
             Vector2 leaderGround = LeaderGround(leader, dt);
             if (leader != null) leaderDist = Vector2.Distance(leaderGround, pos);
-            if (leader != null) PitFallWatch(me, leader);                         // v0.2.8: a hole fall respawns next to the human
+            if (leader != null) PitFallWatch(me, leader);                         // a hole fall respawns next to the human
 
             // ---- enemies
             Rectangle zone = scene.CurrentCamera != null ? scene.CurrentCamera.GetScreenZone() : Rectangle.Empty;
@@ -188,13 +190,13 @@ namespace CosmicBots
             foreach (object o in scene.GetGameObjectsOfType<Enemy>())
             {
                 if (!(o is Enemy e) || !e.Active || e.IsKO || e.IsInStateKO || !e.IsActiveInWave || e.IsInsideSpawner) continue;
-                if (!TargetableEnemy(e)) continue;                                   // v0.2.7: later-wave enemies waiting in plain sight
+                if (!TargetableEnemy(e)) continue;                                   // later-wave enemies waiting in plain sight
                 Vector2 ep = e.Position2D;
                 if (zone.Width > 0 && (ep.X < zone.Left - 16 || ep.X > zone.Right + 16)) continue; // off screen
                 foes.Add(See(RentFoe(e)));
             }
-            ApplyParts(me, ci, foes, pos, flying);                                   // v0.2.10: bosses are fought through their hittable parts
-            UpdateAdvance(scene);                                                    // v0.2.7: GO arrow up -> only fight threats
+            ApplyParts(me, ci, foes, pos, flying);                                   // bosses are fought through their hittable parts
+            UpdateAdvance(scene);                                                    // GO arrow up -> only fight threats
             int near = 0, veryNear = 0, airFoes = 0, airNear = 0, groundNear = 0;
             foreach (Foe f in foes)
             {
@@ -206,9 +208,9 @@ namespace CosmicBots
             }
             if (airNear > 0) _noAirFoesT = 0f; else _noAirFoesT += dt;
 
-            // ---- v0.2.12: skin enemies (keep out of reach, no melee) and the burst disengage (BotSkin.cs)
+            // ---- skin enemies (keep out of reach, no melee) and the burst disengage (BotSkin.cs)
             bool noAttack = SkinUpdate(me, ci, foes, pos, leader, leaderGround, onGround, me.IsInStateHurt || me.IsInStateKnockdown, now, dt);
-            if (RushUpdate(me, ci, foes, pos, onGround, me.IsInStateHurt || me.IsInStateKnockdown, now, dt)) noAttack = true;   // v0.2.15: Annihilus Negative Rush lane escape
+            if (RushUpdate(me, ci, foes, pos, onGround, me.IsInStateHurt || me.IsInStateKnockdown, now, dt)) noAttack = true;   // Annihilus Negative Rush lane escape
 
             // ---- plan in progress (combo strings, air attacks, team moves)
             RunPlan(dt);
@@ -225,7 +227,7 @@ namespace CosmicBots
             }
 
             // ---- defense (telegraphed attacks, projectiles, getting hit)
-            // v0.2.5: threat-driven parry / block / dodge / assist-defense (BotDefense.cs)
+            // threat-driven parry / block / dodge / assist-defense (BotDefense.cs)
             bool hurt = me.IsInStateHurt || me.IsInStateKnockdown;
             _wasHurt = hurt;
             if (!hurt && _def == null && !StrandAirborne)
@@ -235,9 +237,9 @@ namespace CosmicBots
             }
             _defWhy = null;
             if (RunDefense(me, ci, pos, onGround, hurt, now)) { if (_defWhy != null && foes.Count > 0) Suppress(_defWhy); if (_forcedMoveT > 0f) { _move = _forcedMove; _urgentMove = true; } return; }
-            if (_rushEsc && !hurt) { RushApply(); return; }   // v0.2.15: get out of Annihilus' charge lane (instant threat: no reaction roll / delay)
+            if (_rushEsc && !hurt) { RushApply(); return; }   // get out of Annihilus' charge lane (instant threat: no reaction roll / delay)
 
-            // ---- v0.2.7: stranded behind a hole / far from the human with no progress -> gap jump, sacrifice or respawn (BotStranded.cs)
+            // ---- stranded behind a hole / far from the human with no progress -> gap jump, sacrifice or respawn (BotStranded.cs)
             if (UpdateStranded(me, ci, leader, leaderGround, leaderDist, pos, onGround, flying, hurt, foes, dt, now)) return;
 
             // ---- tag team: tactical swaps
@@ -251,7 +253,7 @@ namespace CosmicBots
                 foreach (Foe f in foes) { float d = Vector2.Distance(f.P, needy.Position2D); if (d < best) { best = d; rescueFrom = f.E; } }
             }
             Foe target = PickTarget(foes, pos, leader, rescueFrom, ci, flying);
-            if (noAttack) target = null;                                              // v0.2.12: stepping out of a skin / burst escape
+            if (noAttack) target = null;                                              // stepping out of a skin / burst escape
             RegTarget = target?.E;
             NoDamageWatch(me, target, pos, dt);
 
@@ -260,7 +262,7 @@ namespace CosmicBots
             if (me.Energy >= me.MaxEnergy && me.MaxEnergy > 0) _energyFullT += dt; else _energyFullT = 0f;
             if (!PlanBusy && !_specialHolding) TrySpecial(me, foes, target, near, needy, lowestHumanHp, rescueFrom, now, dt);
 
-            // ---- v0.2.5: situational Cosmic Assists (partner hero call-ins)
+            // ---- situational Cosmic Assists (partner hero call-ins)
             if (!PlanBusy && !_specialHolding && TryAssist(me, foes, target, near, needy, lowestHumanHp, pos, dt)) return;
 
             // ---- flight decisions
@@ -295,12 +297,13 @@ namespace CosmicBots
                 else if (me.HPRatio < 0.5f && d < 200f) wantPickup = hpPos;
             }
             Vector2 hazard = HazardAvoid(scene, pos, onGround);
+            if (BotManager.CastleDoomMode) hazard += CastleDoom.TrapAvoid(scene, pos);   // Castle Doom traps (this mode only)
             Vector2 sep = Separation(me, pos, humans) + avoid;
             Foe nearestFoe = null; { float bd = 200f; foreach (Foe f in foes) { float d = Vector2.Distance(f.P, pos); if (d < bd) { bd = d; nearestFoe = f; } } }
 
             // ---- movement / fighting
             Vector2 goal = pos; bool engaging = false;
-            // v0.2.3: no leash. Bots chase any on-screen, reachable enemy; goals are clamped to the camera's collision box,
+            // no leash. Bots chase any on-screen, reachable enemy; goals are clamped to the camera's collision box,
             // so they spread as far as the game's camera allows and fall back to formation when no reachable enemy is left.
 
             if (PlanBusy && _planTarget != null)
@@ -309,7 +312,7 @@ namespace CosmicBots
                 if (_planChase && _planTarget != null && _planTarget.Active && !_planTarget.IsKO)
                 {
                     Vector2 tp = _planTarget.Position2D;
-                    if (_partPick != null && ReferenceEquals(_planTarget, _partEnemy)) tp = new Vector2(_partPick.CenterX, _partGroundY);   // v0.2.10: chase the part, not the body
+                    if (_partPick != null && ReferenceEquals(_planTarget, _partEnemy)) tp = new Vector2(_partPick.CenterX, _partGroundY);   // chase the part, not the body
                     float dx = tp.X - pos.X;
                     if (Math.Abs(dx) > 18f) _move = new Vector2(Math.Sign(dx), 0f);
                     if (Math.Abs(tp.Y - pos.Y) > 4f) _move.Y = Math.Sign(tp.Y - pos.Y) * 0.6f;
@@ -331,7 +334,7 @@ namespace CosmicBots
             else if (_move != Vector2.Zero) { _arrX = _arrY = false; }
             if (_idleT > 0f) { _idleT -= dt; if (!engaging) _move = Vector2.Zero; }
             // idle facing: face the human's way (or the nearest enemy), only after being "wrong" for a while
-            // v0.2.6: a human turning in mid-air (jump / landing) is not a reason to turn around
+            // a human turning in mid-air (jump / landing) is not a reason to turn around
             if (following && _move == Vector2.Zero && _arrX && _arrY && onGround && !flying && (nearestFoe != null || leader.IsOnGround || leader.IsFlying))
             {
                 bool wantLeft = nearestFoe != null ? nearestFoe.P.X < pos.X : leader.HorizontalFlipped;
@@ -352,7 +355,7 @@ namespace CosmicBots
 
             // ---- unstick: moving but not progressing -> jump (or fly). Steered moves into walls are handled by the
             // per-axis wall-stuck logic (they stop instead); we still try a jump when a far-away human is out of reach.
-            // v0.2.6: "stuck" is judged on last frame's FINAL input (after pit guard / sprint), so waiting at a pit edge or a
+            // "stuck" is judged on last frame's FINAL input (after pit guard / sprint), so waiting at a pit edge or a
             // sprint start frame is not "stuck"; while following, at most one such jump per 1.5 s and two per spot.
             bool wallHeld = (_blkSX != 0 || _blkSY != 0) && following && leaderDist > 180f;
             bool noProgress = _lastOut != Vector2.Zero && _forcedMoveT <= 0f && Vector2.DistanceSquared(_lastPos, pos) < 0.25f;
@@ -376,7 +379,7 @@ namespace CosmicBots
         private static void Tick(ref float t, float dt) { if (t > 0f) t -= dt; }
 
         /// <summary>
-        /// Anti-twitch steering (v0.2.1). The game normalizes ANY non-zero stick input to full walk speed and flips facing on
+        /// Anti-twitch steering. The game normalizes ANY non-zero stick input to full walk speed and flips facing on
         /// any non-zero X, so small corrections = full-speed single-frame steps + turn animations. So: smooth the goal,
         /// fold separation into the goal (dead zone + low-pass, not a direct push), and use per-axis arrive/leave hysteresis.
         /// </summary>
@@ -387,7 +390,7 @@ namespace CosmicBots
             Vector2 sepUse = _sepSmooth.Length() < 0.2f ? Vector2.Zero : _sepSmooth;
             Vector2 raw = goal;
             goal += sepUse * PERSONAL_SPACE;
-            // v0.2.3: keep the goal inside the camera box and out of walls (fallback toward the anchor / human lane)
+            // keep the goal inside the camera box and out of walls (fallback toward the anchor / human lane)
             goal = MakeReachable(me, goal, anchor, pos);
             if (engaging && RegTarget != null && Vector2.Distance(goal, raw) > 70f && (!SpotWalkable(me, raw, me.BodyComponent != null ? me.BodyComponent.FloorHeightIgnoringPits : 0f) || PathHasPit(me, pos, raw)))
                 MarkUnreachable(RegTarget, 2.0f);
@@ -455,7 +458,7 @@ namespace CosmicBots
             foreach (Foe f in foes)
             {
                 float dx = Math.Abs(f.P.X - pos.X), dy = Math.Abs(f.P.Y - pos.Y);
-                // v0.2.3: no distance cutoff (was ENGAGE_RADIUS*aggr+60 from the bot plus a 230*aggr leash from the human);
+                // no distance cutoff (was ENGAGE_RADIUS*aggr+60 from the bot plus a 230*aggr leash from the human);
                 // candidates are already limited to on-screen enemies, scoring still prefers the human's fight.
                 float score = dx + dy * 2.5f;
                 if (leader != null)
@@ -464,10 +467,10 @@ namespace CosmicBots
                     score += dl * 0.25f;                                                            // stay near the humans' fight
                     if (dl > ENGAGE_RADIUS) score += (dl - ENGAGE_RADIUS) * 0.15f;                  // far ones only when nothing closer
                 }
-                if (f.Skin && !f.Boss && !(_canShootSkin && f.E != rescueFrom)) continue;       // v0.2.12: never melee a skin-active enemy (ranged heroes shoot it)
+                if (f.Skin && !f.Boss && !(_canShootSkin && f.E != rescueFrom)) continue;       // never melee a skin-active enemy (ranged heroes shoot it)
                 if (IsUnreachable(f.E) && f.E != rescueFrom) continue;                          // walled off a moment ago
-                if (IsIgnored(f.E) && f.E != rescueFrom && !f.Antic && !f.Delivery) continue;   // v0.2.7: hit it, no damage (v0.2.9: unless it is swinging)
-                if (_advance && f.E != rescueFrom && !IsThreat(f, pos, leader)) continue;       // v0.2.7: GO is up, move on
+                if (IsIgnored(f.E) && f.E != rescueFrom && !f.Antic && !f.Delivery) continue;   // hit it, no damage (unless it is swinging)
+                if (_advance && f.E != rescueFrom && !IsThreat(f, pos, leader)) continue;       // GO is up, move on
                 if (leader != null && Vector2.Distance(f.P, leader.Position2D) < 110f) score -= 40f; // on the human right now
                 if (f.Antic || f.Delivery) score -= 20f;                                        // threatening someone right now
                 if (f.Invuln) score += 400f;                                                    // can't hurt it right now
@@ -518,11 +521,11 @@ namespace CosmicBots
         private Vector2 Follow(Player me, CharacterInfo ci, Player leader, Vector2 lp, Vector2 pos, float leaderDist, bool onGround, bool flying, float dt)
         {
             Status = "following";
-            // lp = the human's ground position (v0.2.6: last grounded spot while they are in a jump)
+            // lp = the human's ground position (last grounded spot while they are in a jump)
             bool leaderGrounded = leader.IsOnGround || leader.IsFlying;
             int k = Math.Max(0, Math.Min(2, Info.PlayerID - 1));
             // formation side: behind the human, but only switch sides once the human has stayed turned for ~0.6 s
-            // v0.2.6: turning in mid-air (jumping / landing) never moves the slot to the other side
+            // turning in mid-air (jumping / landing) never moves the slot to the other side
             int wantSide = leader.HorizontalFlipped ? 1 : -1;
             if (_slotSide == 0) { _slotSide = wantSide; _slotSideT = 0f; }
             else if (!leaderGrounded) { }
@@ -534,8 +537,8 @@ namespace CosmicBots
             Vector2 spot = new Vector2(lp.X + _slotSide * sx, lp.Y + sy);
             Intent = "formation slot " + (k + 1);
 
-            // v0.2.6: bots no longer copy the human's jumps. The only follow-jump is a ledge climb: the human has stood on
-            // higher ground (more than a step, low enough to jump onto) close by for 0.5 s. Gaps: wait at the edge (v0.2.4).
+            // bots no longer copy the human's jumps. The only follow-jump is a ledge climb: the human has stood on
+            // higher ground (more than a step, low enough to jump onto) close by for 0.5 s. Gaps: wait at the edge.
             // Being stuck is handled by the unstick logic in Think. At most one follow-jump per 1.5 s.
             if (TryLedgeJump(me, ci, lp, pos, onGround, flying, leaderGrounded, dt)) { _move = _forcedMove; return pos; }
             if (_forcedMoveT > 0f) { _move = _forcedMove; return pos; }
@@ -549,7 +552,7 @@ namespace CosmicBots
             return spot;
         }
 
-        /// <summary>v0.2.6: the human's ground position. Jumping humans are tracked at their last grounded spot (flying ones live).</summary>
+        /// <summary>the human's ground position. Jumping humans are tracked at their last grounded spot (flying ones live).</summary>
         private Vector2 LeaderGround(Player leader, float dt)
         {
             if (leader == null) { _leaderRef = null; return Vector2.Zero; }
@@ -564,7 +567,7 @@ namespace CosmicBots
             return _leaderGround;
         }
 
-        /// <summary>v0.2.6: jump up onto a ledge the (grounded) human stands on. Debounced to one per 1.5 s.</summary>
+        /// <summary>jump up onto a ledge the (grounded) human stands on. Debounced to one per 1.5 s.</summary>
         private bool TryLedgeJump(Player me, CharacterInfo ci, Vector2 lp, Vector2 pos, bool onGround, bool flying, bool leaderGrounded, float dt)
         {
             if (!onGround || flying || PlanBusy || !leaderGrounded || _forcedMoveT > 0f) { _leaderHighT = 0f; return false; }
@@ -606,9 +609,9 @@ namespace CosmicBots
 
             bool part = t.Part != null;
             _engagePart = part || IsLargeTarget(t.E);
-            // v0.2.10: fallback anchor for MakeReachable: the part's own ground spot (mirror / shrink around it), else ourselves
+            // fallback anchor for MakeReachable: the part's own ground spot (mirror / shrink around it), else ourselves
             _engageAnchor = part && _partGroundOk ? tp : pos;
-            float reachX = ATTACK_RANGE_X + t.ExtraReach;                     // v0.2.10: wide boss parts are hittable anywhere along the box
+            float reachX = ATTACK_RANGE_X + t.ExtraReach;                     // wide boss parts are hittable anywhere along the box
             float standX = t.Air && !flying ? 26f : ATTACK_RANGE_X * 0.8f;
             if (part) standX = Math.Min(standX, Math.Max(12f, t.ExtraReach * 0.5f + 14f));
             Vector2 goal = new Vector2(tp.X + _side * standX, tp.Y);
@@ -620,11 +623,11 @@ namespace CosmicBots
                 return part ? goal : new Vector2(tp.X + _side * 80f, tp.Y);   // a part: wait right there, it opens up again
             }
 
-            // v0.2.12: skin up -> no melee, shoot it from outside its reach
+            // skin up -> no melee, shoot it from outside its reach
             if (t.Skin && !t.Boss && part == false) return EngageSkinRanged(me, ci, t, pos, onGround, flying);
 
             // boss wind-up: back off while it is ready to swing at close range, then punish.
-            // v0.2.10: only near the boss body (multi-part bosses swing with their parts: defense handles those), one backoff
+            // only near the boss body (multi-part bosses swing with their parts: defense handles those), one backoff
             // per wind-up and at most one every 2.5 s, so a boss that is always winding up no longer keeps the bots away
             if (t.Boss && !flying && !part)
             {
@@ -685,7 +688,7 @@ namespace CosmicBots
             if (_decideCd > 0f) return pos;
             _decideCd = Jit(ReactionTime * 0.5f);
 
-            // v0.2.12: counter-rushers absorb light hits and answer with their skin attack: heavy swing first
+            // counter-rushers absorb light hits and answer with their skin attack: heavy swing first
             if (TryCounterHeavy(ci, t)) return pos;
 
             // jump-in air combo now and then (feels human, hits enemies behind the first)

@@ -24,14 +24,14 @@ namespace CosmicBots
             P(h, AccessTools.Method(typeof(MainHUD), "Tick", new[] { typeof(float) }), postfix: nameof(HudTickPostfix));
             P(h, AccessTools.Method(typeof(CharacterSelectionPanel), "StateSelectCharacter", new[] { typeof(FSM.StateStep), typeof(float) }), prefix: nameof(StateSelectCharacterPrefix));
 
-            // v0.2.5: defense outcome counters for bot players (block-ok / parry-ok / dodge-iframe / hits-taken)
+            // defense outcome counters for bot players (block-ok / parry-ok / dodge-iframe / hits-taken)
             P(h, AccessTools.Method(typeof(Character), "BlockIncomingAttack"), postfix: nameof(BlockPostfix));
             P(h, AccessTools.Method(typeof(Character), "ParryIncomingAttack"), postfix: nameof(ParryPostfix));
             P(h, AccessTools.Method(typeof(Character), "DodgeIncomingAttack"), postfix: nameof(DodgePostfix));
             P(h, AccessTools.Method(typeof(Character), "InternalHurt"), postfix: nameof(HurtPostfix));
-            // v0.2.11: separate postfix (logging only) so a failure here can never touch the hits-taken counter above
+            // separate postfix (logging only) so a failure here can never touch the hits-taken counter above
             try { P(h, AccessTools.Method(typeof(Character), "InternalHurt"), postfix: nameof(HurtDetailPostfix)); } catch (Exception ex) { Mod.LogOnce("patch-hurtdetail", ex); }
-            // v0.2.9: "the enemy reacted to a player's hit" (anything but Unaffected) for the no-damage safety net
+            // "the enemy reacted to a player's hit" (anything but Unaffected) for the no-damage safety net
             P(h, AccessTools.Method(typeof(Character), "ApplyAttack", new[] { typeof(GameObject2d), typeof(int), typeof(Paris.Engine.Damage.DamageInfo), typeof(int) }), postfix: nameof(ApplyAttackPostfix));
 
             // Keyboard is captured by the mod menu while it is open.
@@ -41,6 +41,9 @@ namespace CosmicBots
             P(h, AccessTools.Method(typeof(InputDirectionActionID), "GetDirection", new[] { typeof(ParisInputType), typeof(InputDirection), typeof(bool), typeof(bool) }), prefix: nameof(BlockDirFloatPrefix));
             P(h, AccessTools.Method(typeof(InputManagerBase), "SomeonePressedStart", new[] { typeof(bool), typeof(bool), typeof(ulong).MakeByRefType() }), prefix: nameof(BlockStartPrefix));
             P(h, AccessTools.Method(typeof(InputManager), "SomeonePressedStart", new[] { typeof(bool), typeof(bool), typeof(ulong).MakeByRefType() }), prefix: nameof(BlockStartPrefix));
+
+            // Siege of Castle Doom mode. Every hook below returns straight away outside that mode.
+            CastleDoom.Apply(h);
         }
 
         public static int Installed, Failed;
@@ -112,13 +115,84 @@ namespace CosmicBots
                 int target = BotManager.ResolveHero(slot, partner, pi);
                 if (target >= 0 && __instance.CurrentSelection != target)
                 {
-                    __instance.CurrentSelection = target; // bot "hovers" its configured hero
+                    __instance.CurrentSelection = target; // bot "hovers" its configured hero (the game resets the hovered color to its default here)
                     if (gameMode) __instance.UpdateCharacterSelection();
                 }
+                // bot color. Same call the game makes for LB/RB (ChangePalette -> SetPaletteIndex), on the list of colors
+                // the game itself offers this player for the hovered hero, so locked colors are never used.
+                if (target >= 0 && target == __instance.CurrentSelection) ApplyColor(__instance, slot, partner, pi);
                 if (!BotManager.ShouldLockIn(__instance, slot, gameMode)) return false; // wait: skip vanilla (which would auto-confirm)
                 return target >= 0; // vanilla Debug path confirms CurrentSelection
             }
             catch (Exception ex) { Mod.LogOnce("charselect", ex); return true; }
+        }
+
+        private static readonly AccessTools.FieldRef<CharacterSelectionPanel, System.Collections.Generic.List<int>> PanelColors =
+            AccessTools.FieldRefAccess<CharacterSelectionPanel, System.Collections.Generic.List<int>>("_availablePalettes");
+
+        /// <summary>Per slot / hero (0 main, 1 partner): how many colors the game offers, which one (1-based) is shown, and for which hero. 0 / -1 = unknown.</summary>
+        public static readonly int[,] ColorCount = new int[4, 2], ColorShown = new int[4, 2];
+        public static readonly int[,] ColorHero = { { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } };
+        private static readonly int[,] _cntHero = { { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } }, _cntN = new int[4, 2], _cntTick = new int[4, 2];
+
+        /// <summary>Real number of colors the game offers this bot for its configured hero (0 = no hero set / unknown).
+        /// Uses the select screen's own list when the bot is on that hero, otherwise the same save data the select screen reads.</summary>
+        public static int HeroColorCount(int slot, bool partner)
+        {
+            int h = partner ? 1 : 0;
+            var cfg = Config.Slots[slot];
+            string name = partner ? cfg.PartnerHero : cfg.MainHero;
+            if (string.IsNullOrEmpty(name)) return 0;
+            int hero = BotManager.IndexOf(name);
+            if (hero < 0) return 0;
+            if (ColorHero[slot, h] == hero && ColorCount[slot, h] > 0) return ColorCount[slot, h];
+            int now = Environment.TickCount;
+            if (_cntHero[slot, h] == hero && unchecked(now - _cntTick[slot, h]) < 500) return _cntN[slot, h];
+            int n = 0;
+            try
+            {
+                var ci = Paris.Game.System.CharacterManager.Singleton.Characters[hero];
+                SaveGame sv = BotManager.GetPlayer(slot)?.Save as SaveGame ?? BotManager.HostSave;
+                if (sv != null)
+                    foreach (string id in sv.GetUnlockedPalettes(hero)) if (ci.Palettes.IndexOf(id) >= 0) n++;
+            }
+            catch { n = 0; }
+            _cntHero[slot, h] = hero; _cntN[slot, h] = n; _cntTick[slot, h] = now;
+            return n;
+        }
+
+        /// <summary>Configured color clamped to the hero's real color count (0 = Auto). Out-of-range values are clamped and saved.</summary>
+        public static int EffectiveColor(int slot, bool partner, out int count)
+        {
+            var cfg = Config.Slots[slot];
+            string name = partner ? cfg.PartnerHero : cfg.MainHero;
+            int c = partner ? cfg.PartnerColor : cfg.Color;
+            count = HeroColorCount(slot, partner);
+            int fixedC = c;
+            if (string.IsNullOrEmpty(name)) fixedC = 0;                 // Auto hero: color is Auto too
+            else if (count > 0) fixedC = Math.Max(0, Math.Min(count, c));
+            if (fixedC != c)
+            {
+                if (partner) cfg.PartnerColor = fixedC; else cfg.Color = fixedC;
+                Config.Save();
+            }
+            return fixedC;
+        }
+
+        private static void ApplyColor(CharacterSelectionPanel panel, int slot, bool partner, GamePlayerInfo pi)
+        {
+            int h = partner ? 1 : 0;
+            var list = PanelColors(panel);
+            if (list == null || list.Count == 0) { ColorCount[slot, h] = 0; return; }
+            ColorHero[slot, h] = panel.CurrentSelection;
+            ColorCount[slot, h] = list.Count;
+            int want = EffectiveColor(slot, partner, out _);
+            // Auto = the game's default color for a freshly hovered hero (palette 1), i.e. exactly what bots did before 0.5.0.
+            int pos = want <= 0 ? panel.GetPaletteIndex(1) : Math.Min(want, list.Count) - 1;
+            if (pos < 0) pos = 0;
+            int cur = panel.GetPaletteIndex(pi.Heroes[h].PaletteIndex);
+            if (cur != pos) panel.SetPaletteIndex(pos);
+            ColorShown[slot, h] = panel.GetPaletteIndex(pi.Heroes[h].PaletteIndex) + 1;
         }
 
         // ------------------------------------------------------------------ input capture while menu open

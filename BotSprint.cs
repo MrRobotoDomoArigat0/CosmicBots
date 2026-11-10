@@ -5,12 +5,12 @@ using Paris.Game.Actor;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.5 sprinting. The game starts a sprint on a digital double-tap (PlayerSprint): entering StateWalk records the
+    /// sprinting. The game starts a sprint on a digital double-tap (PlayerSprint): entering StateWalk records the
     /// just-pressed direction and opens a SprintDigitalDoubleTapTime (0.25 s) window, releasing the stick for a frame arms
     /// it, and pushing the same X direction again calls DoSprintCheck -> StateSprint (CharacterInfo.RunSpeed, 180 px/s
     /// by default, ~2x walk). The bot reproduces exactly that input (idle frame, tap, release frame, press) only when it
     /// decided to sprint; otherwise its digital stick reads zero so normal steering can never trigger a sprint by accident.
-    /// Sprint ends with a neutral or depth-only input before arrival, so the walk hysteresis (v0.2.1) settles the last
+    /// Sprint ends with a neutral or depth-only input before arrival, so the walk hysteresis settles the last
     /// few dozen px; holes on the sprint path cancel it (the game does not prevent pit fall-off while sprinting).
     /// </summary>
     public partial class BotController

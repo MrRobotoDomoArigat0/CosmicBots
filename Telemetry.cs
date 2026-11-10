@@ -76,8 +76,30 @@ namespace CosmicBots
                 Skip(h, "Paris.Engine.EpicHelper:Init", nameof(PrefixSkip), "EpicHelper.Init -> skipped (no EOS platform, no EOS login/stats ingest/achievement sync/player reports/online lobbies)");
                 foreach (string n in new[] { "Login", "Reauth", "DoLinkAccount", "InternalLogin" })
                     Skip(h, "Paris.Engine.EpicHelper:" + n, nameof(PrefixSkip), null);
+                // With EOS off there is no EOS platform object; the game's lobby lock/unlock (called when a Castle Doom run starts,
+                // locks or ends) would dereference it. Offline there is no lobby either, so only the game's own lock flag is kept.
+                MethodInfo lockM = AccessTools.Method("Paris.Engine.Networking.NetworkManager:ChangeLobbyLocked", new[] { typeof(bool) });
+                if (lockM != null)
+                {
+                    h.Patch(lockM, prefix: new HarmonyMethod(typeof(Telemetry), nameof(LobbyLockPrefix)));
+                    Note("NetworkManager.ChangeLobbyLocked -> lock flag only while EOS is off (no lobby offline)");
+                }
             }
             else Note("Epic Online Services left ON (BlockEpicOnlineServices=false in CosmicBots.ini)");
+        }
+
+        private static readonly System.Reflection.PropertyInfo LobbyLockedProp =
+            AccessTools.Property(typeof(Paris.Engine.Networking.NetworkManagerBase), "LobbyLocked");
+
+        public static bool LobbyLockPrefix(object __instance, bool isLocked)
+        {
+            try
+            {
+                if (Paris.Engine.EpicHelper.Interface != null) return true;   // EOS running: game's own code
+                LobbyLockedProp?.SetValue(__instance, isLocked, null);
+                return false;
+            }
+            catch { return true; }
         }
 
         private static void PatchNBug(Harmony h)

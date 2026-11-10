@@ -20,7 +20,7 @@ namespace CosmicBots
         private static Keys _key = Keys.F7;
         private static string _toast = ""; private static float _toastTime;
 
-        private enum RowKind { Toggle, Hero, Partner, LockIn, Aggression, Skill, Close }
+        private enum RowKind { Toggle, Hero, Color, Partner, PartnerColor, LockIn, Aggression, Skill, Close }
         private struct Row { public RowKind Kind; public int Slot; }
         private static readonly List<Row> Rows = new List<Row>();
 
@@ -30,7 +30,9 @@ namespace CosmicBots
             {
                 Rows.Add(new Row { Kind = RowKind.Toggle, Slot = s });
                 Rows.Add(new Row { Kind = RowKind.Hero, Slot = s });
+                Rows.Add(new Row { Kind = RowKind.Color, Slot = s });
                 Rows.Add(new Row { Kind = RowKind.Partner, Slot = s });
+                Rows.Add(new Row { Kind = RowKind.PartnerColor, Slot = s });
             }
             Rows.Add(new Row { Kind = RowKind.LockIn });
             Rows.Add(new Row { Kind = RowKind.Aggression });
@@ -77,6 +79,8 @@ namespace CosmicBots
         private static bool Selectable(Row r)
         {
             if (r.Kind == RowKind.Hero || r.Kind == RowKind.Partner) return Config.Slots[r.Slot].Enabled;
+            if (r.Kind == RowKind.Color) return Config.Slots[r.Slot].Enabled && !string.IsNullOrEmpty(Config.Slots[r.Slot].MainHero);
+            if (r.Kind == RowKind.PartnerColor) return Config.Slots[r.Slot].Enabled && !string.IsNullOrEmpty(Config.Slots[r.Slot].PartnerHero);
             return true;
         }
 
@@ -112,6 +116,21 @@ namespace CosmicBots
                         if (pos == 0 || BotManager.IndexOf(opts[pos]) != other) break; // hero and partner must differ
                     }
                     if (partner) cfg.PartnerHero = opts[pos]; else cfg.MainHero = opts[pos];
+                    Config.Save();
+                    GamePatches.EffectiveColor(r.Slot, partner, out _); // clamp the color to the new hero's color count
+                    ApplyHeroChange(r.Slot);
+                    break;
+                }
+                case RowKind.Color:
+                case RowKind.PartnerColor:
+                {
+                    // 0 = Auto (game default), 1..n = the n colors the game offers this bot for the selected hero (its LB/RB list).
+                    var cfg = Config.Slots[r.Slot];
+                    bool partner = r.Kind == RowKind.PartnerColor;
+                    int cur = GamePatches.EffectiveColor(r.Slot, partner, out int n);
+                    if (n <= 0) { Toast("Pick a hero first; colors follow the selected hero."); return; }
+                    cur = (cur + (d >= 0 ? 1 : -1) + n + 1) % (n + 1);
+                    if (partner) cfg.PartnerColor = cur; else cfg.Color = cur;
                     Config.Save();
                     ApplyHeroChange(r.Slot);
                     break;
@@ -151,6 +170,15 @@ namespace CosmicBots
         // ------------------------------------------------------------------ drawing
         public static string Sanitize(string s) => string.IsNullOrEmpty(s) ? "" : s.Replace('[', '(').Replace(']', ')');
 
+        // Layout (game coordinates = EngineSettings.GameResolution, e.g. 480x270):
+        //   margin M = 8*scale above and below the box, padding P = 4*scale inside it.
+        //   Height in lines: 2 title lines (3 with the Castle Doom note) + 0.3 gap + 19 rows + 3 x 0.3 bot-block gaps + 0.3 gap + 1 status line = 23.5 lines.
+        //   Line height = 12*scale if that fits, else shrunk to fit (never below the font's own height + 1px).
+        //   If it still does not fit, the rows scroll so the selected row is always visible ("^" / "v").
+        private const float Gap = 0.3f, StatusLines = 1f;
+        private const string CastleDoomNote = "Castle Doom bots: experimental";
+        private static int _first;
+
         public static void Render()
         {
             Renderer r = Renderer.Singleton;
@@ -158,39 +186,70 @@ namespace CosmicBots
             Vector2 res = EngineSettings.Singleton.GameResolution;
             float scale = Math.Max(1f, (float)Math.Floor(res.Y / 360f));
             int font = r.DebugFontID;
-            float lh = 12f * scale;
+            float glyph = 8f;
+            try { glyph = Math.Max(1f, r.MeasureString(font, "Ag").Y); } catch { }
+            float minLh = Math.Min(12f * scale, (float)Math.Ceiling(glyph * scale) + scale);
 
             if (!Open)
             {
-                float y = res.Y - lh * 4.5f;
-                if (_toastTime > 0f) Text(r, font, new Vector2(8 * scale, y - lh), _toast, Color.Yellow, scale);
+                float y = res.Y - 12f * scale * 4.5f;
+                if (_toastTime > 0f) Text(r, font, new Vector2(8 * scale, y - 12f * scale), _toast, Color.Yellow, scale);
                 return;
             }
 
-            float w = 330f * scale, h = (Rows.Count + 5) * lh + 10f * scale;
-            Vector2 o = new Vector2(16f * scale, 16f * scale);
+            bool castleDoom = BotManager.CastleDoomMode;
+            float TitleLines = castleDoom ? 3f : 2f;   // title, credit (+ Castle Doom note)
+            float M = 8f * scale, P = 4f * scale;
+            float avail = res.Y - 2f * M - 2f * P;
+            int n = Rows.Count;
+            float lines = TitleLines + Gap + n + 3 * Gap + Gap + StatusLines;
+            float lh = Math.Max(minLh, Math.Min(12f * scale, (float)Math.Floor(avail / lines)));
+            bool scroll = lines * lh > avail;
+            int visible = n;
+            float rowGap = Gap;
+            if (scroll)
+            {
+                rowGap = 0f;   // drop the block gaps first, then scroll
+                visible = Math.Max(3, (int)Math.Floor((avail - (TitleLines + Gap + Gap + StatusLines) * lh) / lh));
+                if (visible >= n) { visible = n; scroll = false; }
+            }
+            if (!scroll) _first = 0;
+            else
+            {
+                if (_row < _first) _first = _row;
+                if (_row >= _first + visible) _first = _row - visible + 1;
+                _first = Math.Max(0, Math.Min(_first, n - visible));
+            }
+            int gapsShown = 0;
+            for (int i = _first; i < _first + visible - 1; i++) if (Rows[i].Kind == RowKind.PartnerColor) gapsShown++;
+            float h = (TitleLines + Gap + visible + gapsShown * rowGap + Gap + StatusLines) * lh + 2f * P;
+            float w = Math.Min(330f * scale, res.X - 2f * M);
+            Vector2 o = new Vector2(M, M);
             r.DrawBox(new Rectangle((int)o.X, (int)o.Y, (int)w, (int)h), new Color(0, 0, 0, 200));
             r.DrawRectangle(new Rectangle((int)o.X, (int)o.Y, (int)w, (int)h), new Color(255, 200, 60));
-            Vector2 p = o + new Vector2(8f * scale, 5f * scale);
-            string where = BotManager.Online ? "ONLINE - bots disabled" : BotManager.InCharSelect ? "character select" : BotManager.InLevel ? "in level" : "menus (bots join at character select)";
+            Vector2 p = o + new Vector2(P + 2f * scale, P);
             Text(r, font, p, "COSMIC BOTS  (" + _key + " close, arrows, Enter)", new Color(255, 200, 60), scale); p.Y += lh;
-            Text(r, font, p, "Where: " + where, Color.Gray, scale); p.Y += lh * 1.3f;
+            Text(r, font, p, "By MrRobotoDomoArigato", new Color(255, 200, 60), scale); p.Y += lh;
+            if (castleDoom) { Text(r, font, p, CastleDoomNote, new Color(255, 140, 60), scale); p.Y += lh; }
+            p.Y += lh * Gap;
 
             bool online = BotManager.Online;
-            for (int i = 0; i < Rows.Count; i++)
+            float rightX = o.X + w - P - 6f * scale;
+            for (int i = _first; i < _first + visible; i++)
             {
                 Row row = Rows[i];
                 bool sel = i == _row;
                 bool dim = online || !Selectable(row);
                 Color c = dim ? Color.DimGray : sel ? Color.Yellow : Color.White;
-                string label = RowText(row);
-                Text(r, font, p, (sel ? "> " : "  ") + label, c, scale);
+                Text(r, font, p, (sel ? "> " : "  ") + RowText(row), c, scale);
+                if (scroll && i == _first && _first > 0) Text(r, font, new Vector2(rightX, p.Y), "^", Color.Yellow, scale);
+                if (scroll && i == _first + visible - 1 && _first + visible < n) Text(r, font, new Vector2(rightX, p.Y), "v", Color.Yellow, scale);
                 p.Y += lh;
-                if (row.Kind == RowKind.Partner) p.Y += lh * 0.3f;
+                if (row.Kind == RowKind.PartnerColor && i < _first + visible - 1) p.Y += lh * rowGap;
             }
-            p.Y += lh * 0.3f;
+            p.Y += lh * Gap;
             if (_toastTime > 0f) Text(r, font, p, _toast, Color.Yellow, scale);
-            else if (!string.IsNullOrEmpty(BotManager.LastAction)) Text(r, font, p, BotManager.LastAction, Color.Gray, scale);
+            else if (!string.IsNullOrEmpty(BotManager.LastAction)) Text(r, font, p, BotManager.LastAction, new Color(255, 230, 150), scale);
         }
 
         private static string RowText(Row row)
@@ -207,6 +266,10 @@ namespace CosmicBots
                 }
                 case RowKind.Hero:
                     return "     Hero:    " + HeroLabel(Config.Slots[row.Slot].MainHero);
+                case RowKind.Color:
+                    return "     Color:   " + ColorLabel(row.Slot, false);
+                case RowKind.PartnerColor:
+                    return "     Partner color: " + ColorLabel(row.Slot, true);
                 case RowKind.Partner:
                     return "     Partner: " + HeroLabel(Config.Slots[row.Slot].PartnerHero);
                 case RowKind.LockIn:
@@ -218,6 +281,13 @@ namespace CosmicBots
                 default:
                     return "Close";
             }
+        }
+
+        private static string ColorLabel(int slot, bool partner)
+        {
+            int c = GamePatches.EffectiveColor(slot, partner, out int n);
+            if (c <= 0 || n <= 0) return "Auto";
+            return c + " of " + n;
         }
 
         private static string HeroLabel(string internalName)

@@ -17,15 +17,15 @@
     <!-- assembly metadata -->
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Product>CosmicBots</Product>
-    <AssemblyTitle>CosmicBots (Public Test 1)</AssemblyTitle>
+    <AssemblyTitle>CosmicBots 0.5.1</AssemblyTitle>
     <Company>MrRobotoDomoArigato</Company>
     <Authors>MrRobotoDomoArigato</Authors>
     <Copyright>© 2026 MrRobotoDomoArigato</Copyright>
-    <Description>CosmicBots 0.4.0 Public Test 1 - an unofficial fan mod that adds AI teammates for players 2-4 in offline local play. Not affiliated with or endorsed by Marvel, Tribute Games, Dotemu or Valve.</Description>
-    <Version>0.4.0</Version>
-    <AssemblyVersion>0.4.0.0</AssemblyVersion>
-    <FileVersion>0.4.0.0</FileVersion>
-    <InformationalVersion>0.4.0-test1</InformationalVersion>
+    <Description>CosmicBots 0.5.1 - an unofficial fan mod that adds AI teammates for players 2-4 in offline local play. Not affiliated with or endorsed by Marvel, Tribute Games, Dotemu or Valve.</Description>
+    <Version>0.5.1</Version>
+    <AssemblyVersion>0.5.1.0</AssemblyVersion>
+    <FileVersion>0.5.1.0</FileVersion>
+    <InformationalVersion>0.5.1</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
     <!-- reproducible build, no personal paths in the binary, no pdb -->

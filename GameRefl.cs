@@ -40,7 +40,7 @@ namespace CosmicBots
             catch (Exception ex) { Mod.LogOnce("refl-init", ex); }
         }
 
-        /// <summary>v0.2.9: Player._blockStartTimer (seconds since the current block started; parry if <= window), or -1.</summary>
+        /// <summary>Player._blockStartTimer (seconds since the current block started; parry if <= window), or -1.</summary>
         public static float BlockTimer(Player p)
         {
             if (p == null || !Ok || _blockTimer == null) return -1f;
@@ -54,7 +54,7 @@ namespace CosmicBots
             try { FSM f = _fsm(a); return f != null && f.HasState ? f.CurrentStateName ?? "" : ""; } catch { return ""; }
         }
 
-        /// <summary>v0.2.7: FSM.ChangeState by state method name (e.g. "StateFall"); false if the state does not exist.</summary>
+        /// <summary>FSM.ChangeState by state method name (e.g. "StateFall"); false if the state does not exist.</summary>
         public static bool ChangeState(Actor2d a, string stateName)
         {
             if (a == null || !Ok) return false;

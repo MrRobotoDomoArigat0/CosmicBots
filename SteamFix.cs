@@ -10,18 +10,20 @@ using Paris.Engine.Menu;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.3.2: makes the mod work when CosmicBots.exe is started directly (not through Steam's Play button).
-    ///
+    /// makes the mod work when CosmicBots.exe is started directly (not through Steam's Play button).
     /// Root cause of the 13466 "NullReferenceException in MainMenu.Tick" crash: when Game.exe is not started by Steam it has no
     /// Steam App ID, so SteamAPI.Init() fails. InputManager (Steam Input) then never becomes Ready, Paris.InitControllers never
     /// adds the first local player, MenuContext.Controller stays null and MainMenu.Tick dereferences it on the first menu frame.
-    ///
     /// Layers (all local, nothing is sent anywhere):
     ///  1. Before the game starts, declare the Steam App ID through the SteamAppId / SteamGameId environment variables
     ///     (the same thing steam_appid.txt does) unless Steam/the user already provided one. No game file is touched.
     ///  2. If Steam still cannot be initialised, report InputManager.Ready = true so the game falls back to its plain FNA
     ///     keyboard/gamepad path (every Steam Input call in InputManager is separately guarded by its _initialized flag).
     ///  3. MainMenu.Tick is skipped for any frame in which the menu has no controller yet (instead of throwing).
+    ///  4. input fallback (ported from ShreddedBots): if Steam Input DID initialise but no first local player has been
+    ///     added after Config.InputFallbackSeconds on the title screen (Steam Input never reports a controller or button press,
+    ///     e.g. the controller isn't recognised or Steam Input is broken/disabled for this game), switch InputManager to the same
+    ///     plain FNA keyboard/gamepad path as layer 2. Input only: SteamAPI, ownership, DLC, achievements etc. are not touched.
     /// </summary>
     public static class SteamFix
     {
@@ -62,6 +64,10 @@ namespace CosmicBots
         // ---- layers 2 + 3 + diagnostics: Harmony, inside the game domain ---------------------------------
         private static AccessTools.FieldRef<InputManager, bool> _inputInitialized;
         private static bool _loggedSteam, _lastSteam, _loggedReady, _loggedSkip;
+        // layer 4 (input fallback, ported from ShreddedBots)
+        private static bool _forcePlainInput, _loggedForce;
+        private static System.Diagnostics.Stopwatch _noControllerSince;
+        private static InputManager _lastInput;
 
         public static void Apply(Harmony h)
         {
@@ -104,9 +110,17 @@ namespace CosmicBots
         // InputManager.Ready is false forever if Steam Input never initialised; every Steam call in InputManager is guarded by _initialized.
         public static void ReadyPostfix(InputManager __instance, ref bool __result)
         {
-            if (__result) return;
             try
             {
+                _lastInput = __instance;
+                if (_forcePlainInput)
+                {
+                    // Layer 4: keep Steam Input switched off for InputManager (the game may re-initialise it on its periodic Steam retry).
+                    if (_inputInitialized(__instance)) _inputInitialized(__instance) = false;
+                    __result = true;
+                    return;
+                }
+                if (__result) return;
                 if (_inputInitialized(__instance)) return;      // Steam Input is up but simply not ready yet: keep the game's own answer
                 __result = true;
                 if (!_loggedReady) { _loggedReady = true; Log.Warn("Steam: Steam Input not available; reporting input as ready so the game uses plain keyboard/gamepad input."); }
@@ -118,13 +132,32 @@ namespace CosmicBots
         {
             try
             {
-                if (__instance.Controller != null) return true;
+                if (__instance.Controller != null) { _noControllerSince = null; return true; }
                 __instance.ResetController();                    // picks Players[0] if one exists by now
-                if (__instance.Controller != null) return true;
+                if (__instance.Controller != null) { _noControllerSince = null; return true; }
+                MaybeForcePlainInput();
                 if (!_loggedSkip) { _loggedSkip = true; Log.Warn("MainMenu.Tick skipped: no controller yet (waiting for the first local player to be added)."); }
                 return false;
             }
             catch { return true; }
+        }
+
+        /// <summary>Layer 4: called on every title-screen frame that still has no controller.</summary>
+        private static void MaybeForcePlainInput()
+        {
+            if (_forcePlainInput || _inputInitialized == null) return;
+            float limit = Config.InputFallbackSeconds;
+            if (limit <= 0f) return;                                     // disabled in the ini
+            if (_noControllerSince == null) { _noControllerSince = System.Diagnostics.Stopwatch.StartNew(); return; }
+            if (_noControllerSince.Elapsed.TotalSeconds < limit) return;
+            _forcePlainInput = true;
+            try { if (_lastInput != null) _inputInitialized(_lastInput) = false; } catch { }
+            if (!_loggedForce)
+            {
+                _loggedForce = true;
+                Log.Warn("Input fallback: no player joined through Steam Input after " + limit.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)
+                    + " s; switching to plain keyboard/gamepad input. Press a button to join. (Set InputFallbackSeconds=0 in CosmicBots.ini to turn this off.)");
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ contain any game code, game assemblies or assets.
 - **Your own legitimate copy of MARVEL Cosmic Invasion** (Steam). The mod compiles against the game's
   `Game.exe`, `ParisEngine.dll`, `FNA.dll`, `NLog.dll` and `Newtonsoft.Json.dll`. These are only
   read at compile time and are never copied to the output. They are not included in this repository.
-  The release was built against Steam build 1.0.0.13466. Other builds may fail to compile or may
+  The release was built against Steam build 1.0.0.14793 (the "Siege of Castle Doom" DLC update). Other builds may fail to compile or may
   produce a different exe.
 
 ## Build
@@ -66,10 +66,10 @@ same game build is used for the reference assemblies. In PowerShell:
 Get-FileHash bin\Release\CosmicBots.exe, bin\Release\CosmicBots.exe.config, bin\Release\0Harmony.dll -Algorithm SHA256
 ```
 
-Expected SHA-256 for release 0.4.0-test1:
+Expected SHA-256 for release 0.5.1:
 
 ```
-b18b68e1c6509f893f0e8947f690a1e727d37008df9feed12ef11d78bc36fcdc  CosmicBots.exe
+95f1a2df3d667a3e056411932b0a76a4c8b7ed5c7dda5c456791b250005da80e  CosmicBots.exe
 03940fcfcc5c386db34cf8b2f9ff9db8e6c8809b44bfc6d6c085e2919956110e  CosmicBots.exe.config
 4c06bb6d9d75785f9b64fd551fc75d54af9d5a5458a43cfb5bf52a5a22b24e6e  0Harmony.dll
 ```
@@ -83,8 +83,9 @@ as reference. The `CosmicBots.exe` in the release was produced with the .NET SDK
 - `Loader.cs` / `Mod.cs`: launcher, AppDomain setup and starting the game's `Main`.
 - `GamePatches.cs`, `GameRefl.cs`: Harmony hooks into the game (looked up by type and method name).
 - `Telemetry.cs`: **disables** the game's crash reporting and outbound HTTP (NBug, Discord webhook, web services, analytics). The mod itself makes no network connections.
-- `Bot*.cs`, `Menu*.cs`, `Config.cs`: the bot AI and the in-game F7 menu.
-- `SteamFix.cs`: sets the Steam app id environment variables so the game starts when launched outside Steam.
+- `Bot*.cs`, `Menu*.cs`, `Config.cs`: the bot AI and the in-game F7 menu (including per-bot hero colors).
+- `CastleDoom.cs`: experimental Siege of Castle Doom support (bots ready up on the Reed's Lab vote without voting, auto-pick perks, don't take the elevator while a human stands, avoid traps; no-op in other modes). With Epic Online Services off, `Telemetry.cs` also keeps the game's Castle Doom lobby lock/unlock from touching the (absent) EOS platform.
+- `SteamFix.cs`: sets the Steam app id environment variables so the game starts when launched outside Steam, and the Steam Input fallback (`InputFallbackSeconds` in `CosmicBots.ini`, default 5, 0 = off): if no player has joined through Steam Input after that many seconds on the title screen, plain keyboard/gamepad input is used instead.
 
 ## License
 

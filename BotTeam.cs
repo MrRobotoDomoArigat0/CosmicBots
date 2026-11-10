@@ -9,7 +9,7 @@ using Paris.Game.Data;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.5 situational "Cosmic Assists" and team specials.
+    /// situational "Cosmic Assists" and team specials.
     /// In the game code a Cosmic Assist is Player.TeamHelp: hold TeamSwap and press a button, and the player's OWN
     /// off-screen partner hero (each player picks two heroes) jumps in for one move:
     ///   Swap+Attack = ComboAttack, Swap+Power = PowerAttack, Swap+Dodge/Block/Parry = Defense, Swap+Jump = Launcher

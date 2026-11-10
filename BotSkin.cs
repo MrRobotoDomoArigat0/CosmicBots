@@ -12,7 +12,7 @@ using Paris.Game.System.Attacks;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.12: spiky-skin awareness and the heavy-damage disengage.
+    /// spiky-skin awareness and the heavy-damage disengage.
     ///   Skin state:  an enemy "has its damaging skin up" while its CurrentAttack is a skin attack (attack name contains "Skin"/"Spike",
     ///                e.g. SwarmerSpikerDamagingSkinAttack) and the attack phase is Antic or Delivery (plus 0.35 s of grace).
     ///   Reach:       the widest attack box of the attack's current animation, raised to the farthest hit actually taken from that
@@ -38,8 +38,8 @@ namespace CosmicBots
 
         private static bool SkinName(string n)
             => !string.IsNullOrEmpty(n) && (n.IndexOf("DamagingSkin", StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("BodyCounter", StringComparison.OrdinalIgnoreCase) >= 0);   // v0.2.14: + red queen QueenExterminaMeleeBodyCounterAttack (spike counter when hurt)
-            //   // v0.2.13: was any "Skin"/"Spike" (flagged BugTrooperSpikedShield swings)
+                || n.IndexOf("BodyCounter", StringComparison.OrdinalIgnoreCase) >= 0);   // + red queen QueenExterminaMeleeBodyCounterAttack (spike counter when hurt)
+            //   // was any "Skin"/"Spike" (flagged BugTrooperSpikedShield swings)
 
         private static int _classLines;
         private static void LogClass(string n, bool skin)

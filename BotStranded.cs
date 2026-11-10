@@ -9,7 +9,7 @@ using Paris.Game.Data;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.7: stranded recovery. A bot cut off from the human by a hole (or making no progress toward a far human)
+    /// stranded recovery. A bot cut off from the human by a hole (or making no progress toward a far human)
     /// recovers in this order:
     ///  a) gap jump - the jump arc is computed from the game's own numbers (GameSettings.JumpImpulse / SuperJumpImpulseSprint
     ///     / JumpGravityAcceleration, Player.GravityAcceleration, CharacterInfo.DoubleJumpImpulse, Player.CurrentWalkSpeed:
@@ -25,9 +25,9 @@ namespace CosmicBots
     public partial class BotController
     {
         private const float STRAND_TIME = 2.0f, STRAND_FAR = 250f, STRAND_CHECK = 0.25f;
-        private const float STRAND_NOPIT_TIME = 6.0f;   // v0.2.9: "no progress" on a level without holes needs 6 s
+        private const float STRAND_NOPIT_TIME = 6.0f;   // "no progress" on a level without holes needs 6 s
 
-        /// <summary>v0.2.9: no-pit levels: truly stuck = off-screen and > 320 px from the human, or > 420 px anywhere.</summary>
+        /// <summary>no-pit levels: truly stuck = off-screen and > 320 px from the human, or > 420 px anywhere.</summary>
         private static bool NoPitFar(Player me, Vector2 pos, float leaderDist)
         {
             if (leaderDist > 420f) return true;
@@ -125,10 +125,10 @@ namespace CosmicBots
             bool leaderOk = leader != null && !leader.IsKO && leader.IsOnGround && GameRefl.StateName(leader) != "StateFallInHole";
             bool roomExit = false; try { roomExit = me.IsDoingRoomExit || (leader != null && leader.IsDoingRoomExit); } catch { }
 
-            // v0.2.8 3) blocked: target unreachable / no valid goal and the bot has not got anywhere for 3 s - even with foes
+            // 3) blocked: target unreachable / no valid goal and the bot has not got anywhere for 3 s - even with foes
             // around (an unreachable enemy across a hole used to veto 1) and 2) while the bots stood still).
             bool blockedCtx = (now - _unreachWantT < 0.5f || now - _slotNoneT < 0.5f) && now - _largeEngageT > 1.0f;
-            // v0.2.9: on levels without holes nothing can strand a bot except being stuck far away / off-screen
+            // on levels without holes nothing can strand a bot except being stuck far away / off-screen
             bool farEnough = LevelHasHoles ? leaderDist > 100f : NoPitFar(me, pos, leaderDist);
             bool blkOk = leader != null && !leader.IsKO && !roomExit && !hurt && (onGround || flying) && GameRefl.StateName(me) != "StateFallInHole" && farEnough;
             if (!blkOk || Vector2.Distance(pos, _strandBlkAnchor) > 32f) { _strandBlkAnchor = pos; _strandBlkT = 0f; }
@@ -188,7 +188,7 @@ namespace CosmicBots
         }
 
         /// <summary>
-        /// v0.2.8: every hole fall (any reason, avoidance on or off) respawns next to the human: the game would put the bot back
+        /// every hole fall (any reason, avoidance on or off) respawns next to the human: the game would put the bot back
         /// on its OWN last solid spot (same side of the hole). If the fall damage would KO the hero, the bot is dropped in next
         /// to the human right away instead (no HP cost, never a KO). Runs every frame from Think.
         /// </summary>

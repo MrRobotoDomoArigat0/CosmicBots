@@ -10,13 +10,13 @@ using Paris.Game.Camera;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.7 target hygiene.
+    /// target hygiene.
     /// - Enemies of a LATER camera block wait in plain sight in Enemy.StateSpawnWaitingCamBlock (Enemy.InitState: a wave with
     ///   StartActive) - e.g. the yellow-armored agents standing behind the market counters. They are Active, IsActiveInWave and
     ///   not KO, but their body is disabled and they are not in the current wave, so hits do nothing until their camera block
     ///   triggers (they then run their spawn sequence, e.g. vault the counter). Same for StateSpawnWaitingHidden /
     ///   StateSpawnWaitingVisibility (CanBeHurt = false). They are not targets.
-    /// - Safety net (v0.2.9): 12 in-reach swings over >= 3 s without damage AND the game says it cannot be hit -> ignored for
+    /// - Safety net: 12 in-reach swings over >= 3 s without damage AND the game says it cannot be hit -> ignored for
     ///   5.5 s by all bots (never bosses / large targets, never something attacking or recently hurting us).
     /// - When the GO arrow is up (BeatEmUpCamera.CameraBlock == null, MainHUD.UpdateGoArrow) bots only fight threats and
     ///   otherwise follow the human.
@@ -86,7 +86,7 @@ namespace CosmicBots
             PruneIgnored();
         }
 
-        // ---------------------------------------------------------------- v0.2.9 no-damage safety net
+        // ---------------------------------------------------------------- no-damage safety net
         private const int ND_SWINGS = 12;           // qualifying swings needed ...
         private const float ND_MIN_TIME = 3f;       // ... spread over at least this long
         private const float ND_IGNORE = 5.5f;       // then ignore it this long (was 20 s)
@@ -104,7 +104,7 @@ namespace CosmicBots
         }
 
         /// <summary>
-        /// v0.2.9: Harmony postfix on Character.ApplyAttack. A hit from any player (or a player's projectile) on an enemy that
+        /// Harmony postfix on Character.ApplyAttack. A hit from any player (or a player's projectile) on an enemy that
         /// was not "Unaffected" (hurt, blocked, parried, dodged, armored...) proves the enemy is hittable.
         /// </summary>
         internal static void OnContact(Character victim, GameObject2d attacker, Paris.Engine.Damage.AttackResult res)
@@ -112,12 +112,12 @@ namespace CosmicBots
             try
             {
                 if (res == null || ReferenceEquals(res, Paris.Engine.Damage.AttackResult.Unaffected)) return;
-                // v0.2.10: Master Mold's hands are separate (non-Enemy) characters: credit the boss
+                // Master Mold's hands are separate (non-Enemy) characters: credit the boss
                 string part = null;
                 if (victim is Paris.Game.Actor.MasterMoldHand mh) { victim = mh.Owner; part = "hand"; }
                 if (!(victim is Enemy e)) return;
                 GameObject2d a = attacker;
-                if (e is EnemyRusher && res.Result == 3 && res.DamageDone == 0 && a is Player cp)   // v0.2.12: a light hit absorbed by a counter rusher
+                if (e is EnemyRusher && res.Result == 3 && res.DamageDone == 0 && a is Player cp)   // a light hit absorbed by a counter rusher
                     try { if (cp.PlayerInfo?.Controller is BotController cb) cb.Stats.Add("counter-absorbed"); } catch { }
                 if (a is Projectile pr) { try { a = pr.Owner; } catch { } }
                 if (!(a is Player ap)) return;
@@ -140,7 +140,7 @@ namespace CosmicBots
         private void NdReset(int hp) { _ndHp = hp; _ndT = 0f; _ndSwings = 0; _ndFirstT = -1f; _ndSamples = 0; _ndVulnSamples = 0; }
 
         /// <summary>
-        /// Safety net (v0.2.9 rewrite): only swings that should connect count (our attack's Delivery starts while the target is
+        /// Safety net rewrite): only swings that should connect count (our attack's Delivery starts while the target is
         /// in reach, in our lane, in front of us, grounded and not blocking / armored / hurt / dodging). After 12 such swings over
         /// at least 3 s without its HP dropping, and only if the game itself says it cannot be hit right now (CanBeHurt false,
         /// invulnerable, no hurt boxes, or not a valid target), it is ignored for 5.5 s by all bots. Never for bosses / big

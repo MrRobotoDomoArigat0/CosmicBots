@@ -9,7 +9,7 @@ using Paris.Game.Actor;
 namespace CosmicBots
 {
     /// <summary>
-    /// v0.2.3: walkable-area awareness.
+    /// walkable-area awareness.
     ///  * Camera clamp: the game pushes every body with CollisionFlag.CAMERA inside camera.GetCollisionBounds()
     ///    (BeatEmUpCamera = bottom ScreenYNavigatableEstateFromBottom of the screen) inset by the body's
     ///    CameraBoundsOffsetHorizontal/Vertical, in screen space (Y - floor height). Goals are clamped inside that with a margin.
@@ -28,7 +28,7 @@ namespace CosmicBots
         private int _pushSX, _pushSY; private float _pushTX, _pushTY, _pushStartX, _pushStartY;
         private int _blkSX, _blkSY; private float _blkUntilX, _blkUntilY, _blkPosX, _blkPosY, _blkGoalX, _blkGoalY;
         // enemies we could not reach (wall-stuck while engaging / goal unwalkable)
-        // v0.2.8: one entry per enemy (was a single slot, so two enemies across a hole were re-marked alternately every frame)
+        // one entry per enemy (was a single slot, so two enemies across a hole were re-marked alternately every frame)
         private readonly Dictionary<Enemy, float> _unreach = new Dictionary<Enemy, float>();
         private readonly List<Enemy> _unreachPrune = new List<Enemy>();
         private float _unreachWantT = -100f, _slotNoneT = -100f, _largeEngageT = -100f;   // last time the bot wanted to mark its target unreachable / had no valid slot
@@ -38,9 +38,9 @@ namespace CosmicBots
         private void MarkUnreachable(Enemy e, float secs)
         {
             if (e == null) return;
-            // v0.2.9: bosses / big targets are never "unreachable": MakeReachable already walks us to the nearest reachable
+            // bosses / big targets are never "unreachable": MakeReachable already walks us to the nearest reachable
             // spot next to them (Master Mold's arena used to trip the stranded detector this way)
-            // v0.2.10: ...but the part we aim at may be walled off: try another part of it for a while
+            // but the part we aim at may be walled off: try another part of it for a while
             if (IsLargeTarget(e)) { _largeEngageT = BotManager.Time; if (ReferenceEquals(_partEnemy, e)) MarkPartBad(2.0f); return; }
             _unreachWantT = BotManager.Time;
             if (IsUnreachable(e)) return;                       // already skipped: keep its original 2 s, no re-mark / re-count
@@ -120,7 +120,7 @@ namespace CosmicBots
             return spot;
         }
 
-        // v0.2.6: fallback-slot hysteresis. The chosen candidate kind sticks until it has been invalid for > 0.3 s; better
+        // fallback-slot hysteresis. The chosen candidate kind sticks until it has been invalid for > 0.3 s; better
         // kinds are only re-tried every 0.3 s (not every frame), so slots don't flip sides/lanes frame to frame.
         private const float RM_BAD_TIME = 0.3f, RM_EVAL_TIME = 0.3f;
         private const int RM_NONE = 8;
@@ -186,7 +186,7 @@ namespace CosmicBots
 
         private Vector2 RmResult(Vector2 c, Vector2 goal)
         {
-            if (_rmKind == RM_NONE)   // v0.2.8: no valid goal (stranded detector); v0.2.9: not while fighting a boss / big target
+            if (_rmKind == RM_NONE)   // no valid goal (stranded detector); not while fighting a boss / big target
             {
                 if (_steerEngaging && IsLargeTarget(RegTarget)) { _largeEngageT = BotManager.Time; Suppress("no-slot"); } else _slotNoneT = BotManager.Time;
             }
@@ -194,7 +194,7 @@ namespace CosmicBots
             return c;
         }
 
-        /// <summary>v0.2.4: standable AND the straight walk there doesn't cross a hole.</summary>
+        /// <summary>standable AND the straight walk there doesn't cross a hole.</summary>
         private static bool Reach(Player me, Vector2 spot, Vector2 from, float floor) => SpotWalkable(me, spot, floor) && !PathHasPit(me, from, spot);
 
         /// <summary>Per-axis stuck detection on last frame's input. Call once per Think with the current ground position.</summary>

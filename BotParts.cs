@@ -34,7 +34,7 @@ namespace CosmicBots
     }
 
     /// <summary>
-    /// v0.2.10: boss part targeting. Bosses like MasterMold are one Enemy whose Position is the (non-colliding) body in the
+    /// boss part targeting. Bosses like MasterMold are one Enemy whose Position is the (non-colliding) body in the
     /// background; what can be hit is the head and the two hands, exposed through the enemy's vulnerability boxes
     /// (GetVulnerabilityBoxCount / GetVulnerabilityBox / Get3DVulnerabilityBoxDepth / GetVulnerabilityBoxOwner). The game
     /// tests a hit with ParisMath.IntersectHitboxes: X overlap of the screen rects, overlap of the heights (Position.Y - box
@@ -307,7 +307,7 @@ namespace CosmicBots
             Stat("part-unreachable");
         }
 
-        // ---------------------------------------------------------------- v0.2.10: attack-suppressed bookkeeping
+        // ---------------------------------------------------------------- attack-suppressed bookkeeping
         private string _suppWhy; private bool _suppMark;
         /// <summary>Something kept the bot from attacking this frame: count the episode and its time by reason.</summary>
         private void Suppress(string why)
