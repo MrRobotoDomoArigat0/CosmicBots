@@ -37,7 +37,7 @@ Adds computer-controlled teammates ("bots") for players 2, 3 and 4 in **offline 
 
 Get the zip from the [Releases page](../../releases) or from [Nexus Mods](https://www.nexusmods.com/marvelcosmicinvasion/mods/20).
 
-## Install
+## Install STEAM
 
 1. Close the game.
 2. In Steam, right-click **MARVEL Cosmic Invasion → Manage → Browse local files**. An Explorer window opens on the game folder (the one that contains `Game.exe`).
@@ -50,9 +50,61 @@ Get the zip from the [Releases page](../../releases) or from [Nexus Mods](https:
 
 **Tip:** right-click `CosmicBots.exe` → **Send to → Desktop (create shortcut)** for an easy launcher.
 
-### Uninstall
+### Uninstall Steam
 
 Close the game and delete `CosmicBots.exe`, `CosmicBots.exe.config`, `0Harmony.dll` and, if you like, `CosmicBots.ini`, `CosmicBots.log` and `CosmicBots.prev.log`. Nothing else was changed. Starting the game from Steam as usual always gives you the unmodded game.
+
+## INSTALL XBOX PC APP (do this with the game FULLY CLOSED)
+---------------------------------------------
+1. Close the game completely (and check it is not still running in Task Manager).
+2. Open the game's Content folder in File Explorer. By default it is:
+       C:\XboxGames\MARVEL Cosmic Invasion\Content
+   (If you installed Xbox games to another drive, it is
+       <drive>:\XboxGames\MARVEL Cosmic Invasion\Content  .
+   It is the folder that contains Game.exe and MicrosoftGame.config.)
+   Tip: in File Explorer turn on View > Show > File name extensions, so you can
+   see the real names and do not end up with "Game-original.exe.exe".
+3. If there is ALREADY a Game-original.exe from an earlier CosmicBots install,
+   check which Game.exe you have now:
+     - If a game update has put the game's own Game.exe back (the game starts
+       without CosmicBots), delete the OLD Game-original.exe first.
+     - If Game.exe is still an older CosmicBots, delete that Game.exe and keep
+       Game-original.exe; then skip step 4.
+   If you are not sure, use Verify and repair in the Xbox app first (see
+   UNINSTALL, option b), delete Game-original.exe, and start from step 4.
+4. Rename the game's  Game.exe  to exactly:
+       Game-original.exe
+5. Unzip this package somewhere (for example your Downloads folder). Copy
+   CosmicBots.exe into the Content folder and rename it to:
+       Game.exe
+6. Copy 0Harmony.dll into the same Content folder.
+   Do NOT copy any .config file; the game's own Game.exe.config stays as it is.
+7. Start the game from the XBOX APP (press Play there) - not by double-clicking
+   anything.
+
+When it works, a small CosmicBots.log file appears in the Content folder and
+the F7 menu opens in game (see below).
+
+When you are done, the Content folder should contain (among the game's other
+files):
+       Game-original.exe     (the game's own exe, renamed)
+       Game.exe              (this mod's CosmicBots.exe, renamed)
+       0Harmony.dll
+
+
+
+## UNINSTALL XBOX PC / RESTORE THE ORIGINAL GAME
+-------------------------------------
+Close the game, then EITHER:
+  a) Delete the mod's Game.exe, delete 0Harmony.dll, and rename
+     Game-original.exe back to  Game.exe.
+     Optionally also delete CosmicBots.ini, CosmicBots.log and
+     CosmicBots.prev.log.
+OR
+  b) In the Xbox app: open MARVEL Cosmic Invasion > the "..." menu > Manage >
+     Files > Verify and repair. This restores the game's own Game.exe.
+     (Afterwards you can delete 0Harmony.dll, Game-original.exe and the
+     CosmicBots.* files yourself; they are harmless leftovers.)
 
 ## Using the bots – the F7 menu
 
