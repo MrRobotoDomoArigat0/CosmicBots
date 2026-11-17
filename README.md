@@ -35,7 +35,7 @@ Adds computer-controlled teammates ("bots") for players 2, 3 and 4 in **offline 
 
 ## Download
 
-Get the zip from the [Releases page](../../releases) or from [Nexus Mods](https://www.nexusmods.com/marvelcosmicinvasion/mods/20).
+Get the zip from the [Releases page](../../releases) (Under Assets) or from [Nexus Mods](https://www.nexusmods.com/marvelcosmicinvasion/mods/20).
 
 ## Install STEAM
 
